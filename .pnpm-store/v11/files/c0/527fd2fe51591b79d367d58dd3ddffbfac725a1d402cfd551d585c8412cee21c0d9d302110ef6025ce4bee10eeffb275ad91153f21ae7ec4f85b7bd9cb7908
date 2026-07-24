@@ -1,0 +1,32 @@
+import { hash } from "ohash";
+//#region ../nuxt/src/app/island-hash.ts
+/**
+* Compute the `hashId` segment embedded in an island URL (`/__nuxt_island/<Name>_<hashId>.json`).
+*
+* The hash binds the response to the requested `(name, props, context, source)` tuple, so the
+* server can reject requests whose URL hash does not match the supplied query/body. Use this
+* from island clients if you need to ensure a hash stays in step with Nuxt's implementation.
+*
+* `props` may be passed either as the raw props object or as the JSON string that will be sent
+* over the wire; the two produce the same hash when the round-trip is identity.
+*
+* @since 4.5.0
+*/
+function getIslandHash(input) {
+	const props = typeof input.props === "string" ? parseSerializedProps(input.props) : input.props ?? {};
+	return hash([
+		input.name,
+		props,
+		input.context ?? {},
+		input.source
+	]).replace(/[-_]/g, "");
+}
+function parseSerializedProps(serializedProps) {
+	try {
+		return JSON.parse(serializedProps);
+	} catch {
+		return serializedProps;
+	}
+}
+//#endregion
+export { getIslandHash };
