@@ -3,6 +3,7 @@ import type { H3Event } from 'h3'
 import type { UserProfile } from '~~/shared/types/user'
 
 const SESSION_COOKIE = 'nuxt_pilot_session'
+const LOGGED_IN_HINT_COOKIE = 'nuxt_pilot_logged_in'
 const sessions = new Map<string, UserProfile>()
 
 export function createSession(event: H3Event, user: UserProfile) {
@@ -11,6 +12,13 @@ export function createSession(event: H3Event, user: UserProfile) {
 
   setCookie(event, SESSION_COOKIE, token, {
     httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 7
+  })
+  setCookie(event, LOGGED_IN_HINT_COOKIE, '1', {
+    httpOnly: false,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
     path: '/',
@@ -33,6 +41,9 @@ export function clearUserSession(event: H3Event) {
   }
 
   deleteCookie(event, SESSION_COOKIE, {
+    path: '/'
+  })
+  deleteCookie(event, LOGGED_IN_HINT_COOKIE, {
     path: '/'
   })
 }

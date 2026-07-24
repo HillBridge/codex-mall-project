@@ -10,28 +10,70 @@ usePageSeo({
 
 const route = useRoute()
 const router = useRouter()
-const filter = ref<ProductFilter>({
-  q: typeof route.query.q === 'string' ? route.query.q : '',
-  category: typeof route.query.category === 'string' ? route.query.category : ''
-})
+const filter = computed<ProductFilter>(() => ({
+  q: readQueryValue(route.query.q),
+  category: readQueryValue(route.query.category)
+}))
+const qDraft = ref(filter.value.q || '')
 
 const { data: products, pending, error, refresh } = await useProductCatalog(filter)
 const productList = computed(() => (products.value || []) as ProductSummary[])
 
 const categories = ['全部', '家居', '户外', '数码', '穿搭']
 
+function readQueryValue(value: unknown) {
+  return typeof value === 'string' ? value : ''
+}
+
+async function replaceProductQuery(next: ProductFilter) {
+  await router.replace({
+    query: {
+      q: next.q || undefined,
+      category: next.category || undefined
+    }
+  })
+}
+
 watch(
-  filter,
+  () => filter.value.q,
   (value) => {
-    router.replace({
-      query: {
-        q: value.q || undefined,
-        category: value.category || undefined
-      }
-    })
-  },
-  { deep: true }
+    if (qDraft.value !== (value || '')) {
+      qDraft.value = value || ''
+    }
+  }
 )
+
+onMounted(() => {
+  watchDebounced(
+    qDraft,
+    async (value) => {
+      const nextQ = value || ''
+      if (nextQ === (filter.value.q || '')) return
+
+      const nextFilter = {
+        q: nextQ,
+        category: filter.value.category
+      }
+
+      await replaceProductQuery(nextFilter)
+      await refresh(nextFilter)
+    },
+    {
+      debounce: 250,
+      maxWait: 1000
+    }
+  )
+})
+
+async function selectCategory(category: string) {
+  const nextFilter = {
+    q: qDraft.value,
+    category: category === '全部' ? '' : category
+  }
+
+  await replaceProductQuery(nextFilter)
+  await refresh(nextFilter)
+}
 </script>
 
 <template>
@@ -45,7 +87,7 @@ watch(
     <section class="filter-bar" aria-label="商品筛选">
       <label class="search-box">
         <Search :size="18" />
-        <input v-model.trim="filter.q" type="search" placeholder="搜索商品、系列或卖点">
+        <input v-model.trim="qDraft" type="search" placeholder="搜索商品、系列或卖点">
       </label>
       <div class="segment-control">
         <button
@@ -54,14 +96,14 @@ watch(
           class="segment"
           :class="{ active: (filter.category || '全部') === category }"
           type="button"
-          @click="filter.category = category === '全部' ? '' : category"
+          @click="selectCategory(category)"
         >
           {{ category }}
         </button>
       </div>
     </section>
 
-    <PendingBlock v-if="pending" />
+    <PendingBlock v-if="pending && !productList.length" />
     <section v-else-if="error" class="inline-error">
       <p>商品数据加载失败。</p>
       <button class="button primary" type="button" @click="refresh()">重新加载</button>

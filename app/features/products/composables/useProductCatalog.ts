@@ -1,70 +1,71 @@
 import type { ProductFilter } from '../types'
 import type { ProductSummary } from '~~/shared/types/product'
 
-export async function useProductCatalog(filter: Ref<ProductFilter>) {
+type ProductCatalogState = {
+  signature: string
+  items: ProductSummary[]
+}
+
+export async function useProductCatalog(filter: Readonly<Ref<ProductFilter>>) {
   const apiFetch = useApiClient()
-  const query = computed(() => ({
-    q: filter.value.q || undefined,
-    category: filter.value.category || undefined
+  const catalog = useState<ProductCatalogState>('products:catalog', () => ({
+    signature: '',
+    items: []
   }))
-
-  const catalog = await useApiData('/products', {
-    query,
-    key: `products:catalog:${filter.value.q || 'all'}:${filter.value.category || 'all'}`,
-    watch: false,
-    default: () => []
-  })
-  const searchPending = ref(false)
-  const searchError = ref<unknown>(null)
+  const pending = ref(false)
+  const error = ref<unknown>(null)
+  const signature = computed(() => createCatalogSignature(filter.value))
   let requestId = 0
-  let abortController: AbortController | null = null
 
-  async function refreshCatalog() {
+  async function fetchCatalog(nextFilter: ProductFilter, showPending: boolean) {
     requestId += 1
     const currentRequestId = requestId
 
-    abortController?.abort()
-    abortController = new AbortController()
-    searchPending.value = true
-    searchError.value = null
+    if (showPending) {
+      pending.value = true
+    }
+    error.value = null
 
     try {
       const result = await apiFetch('/products', {
-        query: query.value,
-        signal: abortController.signal
+        query: {
+          q: nextFilter.q || undefined,
+          category: nextFilter.category || undefined
+        }
       })
 
-      if (currentRequestId === requestId) {
-        catalog.data.value = result as ProductSummary[]
+      if (currentRequestId !== requestId) return
+
+      catalog.value = {
+        signature: createCatalogSignature(nextFilter),
+        items: result as ProductSummary[]
       }
-    } catch (error) {
-      if (!abortController.signal.aborted && currentRequestId === requestId) {
-        searchError.value = error
+    } catch (fetchError) {
+      if (currentRequestId === requestId) {
+        error.value = fetchError
       }
     } finally {
       if (currentRequestId === requestId) {
-        searchPending.value = false
+        pending.value = false
       }
     }
   }
 
-  if (import.meta.client) {
-    watchDebounced(
-      [() => filter.value.q, () => filter.value.category],
-      () => {
-        void refreshCatalog()
-      },
-      {
-        debounce: 250,
-        maxWait: 1000
-      }
-    )
+  if (import.meta.server || catalog.value.signature !== signature.value) {
+    await fetchCatalog(filter.value, false)
   }
 
   return {
-    ...catalog,
-    pending: computed(() => catalog.pending.value || searchPending.value),
-    error: computed(() => catalog.error.value || searchError.value),
-    refresh: refreshCatalog
+    data: computed(() => catalog.value.items),
+    pending,
+    error,
+    refresh: (nextFilter: ProductFilter = filter.value) => fetchCatalog(nextFilter, true)
   }
+}
+
+function createCatalogSignature(filter: ProductFilter) {
+  return JSON.stringify({
+    q: filter.q || '',
+    category: filter.category || ''
+  })
 }
