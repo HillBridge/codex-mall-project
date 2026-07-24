@@ -19,6 +19,72 @@
 
 这条边界很关键：**全局只复用无用户态能力，用户态 headers 只存在于当前 SSR 请求的 wrapper 里。**
 
+### SSR 请求隔离与 Cookie 串号风险
+
+浏览器端是每个用户一个运行环境，服务端则是很多用户共用同一个 Node/Nitro 进程。这是 SSR 项目里必须先建立的基本认知。
+
+服务端可以复用无状态能力，例如：
+
+- `baseURL`
+- `timeout`
+- `retry`
+- 错误解析函数
+- 不携带用户信息的基础 `$fetch` 实例
+
+但不能全局复用用户态数据，例如：
+
+- `cookie`
+- `authorization`
+- 当前用户信息
+- 当前请求的 `x-request-id`
+- 当前用户的 locale、实验分组等请求态信息
+
+如果把 cookie 放到服务端全局变量、模块顶层对象，或者长期存在的 `$fetch` 实例里，就可能出现串号。错误示意：
+
+```ts
+let currentCookie = ''
+
+const api = $fetch.create({
+  onRequest({ options }) {
+    options.headers = {
+      cookie: currentCookie
+    }
+  }
+})
+```
+
+服务端同一个进程会同时处理多个用户请求：
+
+```txt
+A 请求进来，currentCookie = "A 的 cookie"
+B 请求进来，currentCookie = "B 的 cookie"
+A 的 SSR 还没结束，又发起接口请求
+读取 currentCookie 时，可能已经变成 "B 的 cookie"
+```
+
+这就是 cookie 串用。它会造成严重安全问题：
+
+- B 打开个人中心，却看到 A 的资料
+- B 打开购物车，却看到 A 的商品
+- B 查询订单，却拿到 A 的订单列表
+- B 执行加入购物车、收藏、提交资料等写操作时，可能写到 A 的账号下
+- 日志、审计、风控都会出现身份混乱
+
+因此本项目采用两层 API Client：
+
+```txt
+baseFetch
+  进程级复用
+  不保存 cookie
+
+当前 SSR 请求的 $api wrapper
+  只属于本次 SSR 上下文
+  保存当前请求的 cookie / x-request-id
+  发请求时再合并进 headers
+```
+
+这样既减少了重复创建完整 `$fetch` 实例的成本，又能保证用户身份只存在于当前 SSR 请求里。
+
 调用方只写业务路径，不写 `/api` 前缀：
 
 ```ts
