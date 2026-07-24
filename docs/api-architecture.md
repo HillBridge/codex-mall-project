@@ -42,6 +42,30 @@ const { data, pending, error, refresh } = await useApiData('/products', {
 
 页面不要直接使用 `$fetch` 拉首屏数据，避免 SSR/CSR 行为不一致。
 
+### `useQueryDrivenList`
+
+位置：`app/composables/useQueryDrivenList.ts`
+
+用于“SSR 首屏 + URL query 筛选 + 客户端继续筛选”的 C 端列表页，例如商品搜索、内容检索、酒店/机票列表。它统一处理：
+
+- SSR 首屏写入 `useState`
+- 客户端 hydration 复用 SSR 数据
+- 筛选签名一致时不重复请求
+- 用户操作后显式刷新
+- pending/error
+- 旧请求不覆盖新请求
+
+业务模块只需要提供：
+
+```ts
+return await useQueryDrivenList({
+  key: 'products:catalog',
+  filter,
+  getSignature: createCatalogSignature,
+  fetcher: (nextFilter) => apiFetch('/products', { query: nextFilter })
+})
+```
+
 ## 2. 共享契约
 
 位置：`shared/types/api.ts`

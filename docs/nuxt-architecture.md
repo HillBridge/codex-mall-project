@@ -45,11 +45,12 @@ Pinia 只保存跨页面状态，例如会话、购物车、全局偏好。服�
 
 ### SSR 数据一致性
 
-SPA 只在浏览器请求数据，Nuxt 会先在服务端跑一次，再在客户端接管。项目用 `useApiData` 处理 SSR 页面数据，用 `useApiClient` 处理命令式请求，避免同一接口在 SSR 与 CSR 行为不一致。
+SPA 只在浏览器请求数据，Nuxt 会先在服务端跑一次，再在客户端接管。项目用 `useApiData` 处理普通 SSR 页面数据，用 `useQueryDrivenList` 处理 URL query 驱动的复杂列表页，用 `useApiClient` 处理命令式请求，避免同一接口在 SSR 与 CSR 行为不一致。
 
 落地点：
 
 - `app/composables/useApiData.js`
+- `app/composables/useQueryDrivenList.ts`
 - `app/composables/useApiClient.ts`
 - `app/pages/index.vue`
 - `app/pages/products/index.vue`
