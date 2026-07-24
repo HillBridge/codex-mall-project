@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import type { LoginPayload, UserProfile } from '~~/shared/types/user'
 
 export const useSessionStore = defineStore('session', () => {
-  const loggedInHint = useCookie('nuxt_pilot_logged_in')
+  const loggedInHint = useLoggedInHintCookie()
   const user = ref<UserProfile | null>(null)
   const pending = ref(false)
   const ready = ref(false)

@@ -8,7 +8,7 @@ const navItems = appConfig.navigation as Array<{ label: string, to: string }> | 
 const session = useSessionStore()
 const route = useRoute()
 const menuOpen = ref(false)
-const loggedInHint = useCookie('nuxt_pilot_logged_in')
+const loggedInHint = useLoggedInHintCookie()
 
 const productName = computed(() => productConfig?.name || runtimeConfig.public.appName)
 const navigation = computed(() => navItems || [
