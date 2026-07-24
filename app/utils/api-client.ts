@@ -28,39 +28,67 @@ type CreateApiClientOptions = {
   forwardedHeaders?: Record<string, string | undefined>
 }
 
+type BaseApiFetch = <T>(request: string, opts?: ApiClientOptions & {
+  credentials?: RequestCredentials
+}) => Promise<T>
+
+const baseFetchCache = new Map<string, BaseApiFetch>()
+
 export function createApiClient(options: CreateApiClientOptions): ApiClient {
-  const client = $fetch.create({
-    baseURL: options.baseURL,
-    retry: 0,
-    timeout: 15000,
-    onRequest({ options: requestOptions }) {
-      requestOptions.credentials = 'include'
-      const headers = new Headers(requestOptions.headers as HeadersInit)
-
-      headers.set('x-requested-with', 'NuxtPilotClient')
-
-      Object.entries(options.forwardedHeaders || {}).forEach(([key, value]) => {
-        if (value) headers.set(key, value)
-      })
-
-      requestOptions.headers = headers
-    },
-    onResponseError({ response }) {
-      throw normalizeApiError(response.status, response._data)
-    }
-  }) as unknown as <T>(request: string, opts?: ApiClientOptions) => Promise<T>
+  const client = getBaseApiFetch(options.baseURL)
 
   return async function apiClient<TPath extends string>(
     path: TPath,
     requestOptions: ApiClientOptions = {}
   ): Promise<ApiResponseFor<TPath>> {
+    const headers = createRequestHeaders(requestOptions.headers, options.forwardedHeaders)
     const response = await client<ApiSuccess<ApiResponseFor<TPath>>>(
       normalizeApiPath(path),
-      requestOptions
+      {
+        ...requestOptions,
+        credentials: 'include',
+        headers
+      }
     )
 
     return response.data
   }
+}
+
+function getBaseApiFetch(baseURL: string) {
+  const cachedClient = baseFetchCache.get(baseURL)
+
+  if (cachedClient) {
+    return cachedClient
+  }
+
+  const client = $fetch.create({
+    baseURL,
+    retry: 0,
+    timeout: 15000,
+    onResponseError({ response }) {
+      throw normalizeApiError(response.status, response._data)
+    }
+  }) as unknown as BaseApiFetch
+
+  baseFetchCache.set(baseURL, client)
+
+  return client
+}
+
+function createRequestHeaders(
+  requestHeaders?: HeadersInit,
+  forwardedHeaders?: Record<string, string | undefined>
+) {
+  const headers = new Headers(requestHeaders)
+
+  headers.set('x-requested-with', 'NuxtPilotClient')
+
+  Object.entries(forwardedHeaders || {}).forEach(([key, value]) => {
+    if (value) headers.set(key, value)
+  })
+
+  return headers
 }
 
 function normalizeApiPath(path: string) {

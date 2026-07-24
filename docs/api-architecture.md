@@ -10,13 +10,14 @@
 
 用于命令式请求，例如登录、登出、提交表单、收藏、加入购物袋。它不创建 `$fetch` 实例，只返回 Nuxt plugin 注入的 `$api`。
 
-真正的 `$fetch.create` 在 `app/plugins/api.ts` 中完成：
+`app/plugins/api.ts` 负责注入 `$api`，真正的 `$fetch.create` 在 `app/utils/api-client.ts` 中按 `baseURL` 缓存：
 
-- 服务端：每个 SSR request 创建一次，携带当前请求的 cookie 与 request-id
+- 服务端：底层 `$fetch` 进程级复用，但不保存 cookie
+- SSR 请求级：每个 request 创建轻量 `$api` wrapper，只保存当前请求的 cookie 与 request-id
 - 客户端：Nuxt app 初始化时创建一次，后续组件和 store 复用
 - 两端统一：baseURL、credentials、错误归一化、响应拆包都走同一套逻辑
 
-底层实现位于 `app/utils/api-client.ts`，这里集中维护拦截器和响应格式适配。
+这条边界很关键：**全局只复用无用户态能力，用户态 headers 只存在于当前 SSR 请求的 wrapper 里。**
 
 调用方只写业务路径，不写 `/api` 前缀：
 
