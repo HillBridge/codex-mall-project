@@ -8,7 +8,15 @@
 
 位置：`app/composables/useApiClient.ts`
 
-用于命令式请求，例如登录、登出、提交表单、收藏、加入购物袋。
+用于命令式请求，例如登录、登出、提交表单、收藏、加入购物袋。它不创建 `$fetch` 实例，只返回 Nuxt plugin 注入的 `$api`。
+
+真正的 `$fetch.create` 在 `app/plugins/api.ts` 中完成：
+
+- 服务端：每个 SSR request 创建一次，携带当前请求的 cookie 与 request-id
+- 客户端：Nuxt app 初始化时创建一次，后续组件和 store 复用
+- 两端统一：baseURL、credentials、错误归一化、响应拆包都走同一套逻辑
+
+底层实现位于 `app/utils/api-client.ts`，这里集中维护拦截器和响应格式适配。
 
 调用方只写业务路径，不写 `/api` 前缀：
 
