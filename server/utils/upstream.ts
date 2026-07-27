@@ -1,4 +1,4 @@
-import { appendResponseHeader, getHeader } from 'h3'
+import { appendResponseHeader, getHeader, getRequestURL, splitCookiesString } from 'h3'
 import type { H3Event } from 'h3'
 import type { ApiErrorCode, ApiFailure } from '~~/shared/types/api'
 import { getTraceId, throwApiError } from './api-response'
@@ -119,8 +119,11 @@ function ensureTrailingSlash(value: string) {
 function createUpstreamHeaders(event: H3Event, input?: HeadersInit, body?: unknown) {
   const headers = new Headers(input)
   const cookie = getHeader(event, 'cookie')
+  const requestURL = getRequestURL(event)
 
   headers.set('x-request-id', getTraceId(event))
+  headers.set('x-forwarded-host', getHeader(event, 'host') || requestURL.host)
+  headers.set('x-forwarded-proto', getHeader(event, 'x-forwarded-proto') || requestURL.protocol.replace(':', ''))
 
   if (body !== undefined && !headers.has('content-type')) {
     headers.set('content-type', 'application/json')
@@ -148,15 +151,13 @@ function forwardSetCookieHeaders(event: H3Event, headers: Headers) {
   const readableHeaders = headers as Headers & {
     getSetCookie?: () => string[]
   }
-  const setCookieHeaders = readableHeaders.getSetCookie?.() || []
-
-  if (!setCookieHeaders.length) {
-    const singleSetCookie = headers.get('set-cookie')
-    if (singleSetCookie) {
-      appendResponseHeader(event, 'set-cookie', singleSetCookie)
-    }
-    return
-  }
+  const directSetCookieHeaders = readableHeaders.getSetCookie?.() || []
+  const fallbackSetCookieHeader = headers.get('set-cookie')
+  const setCookieHeaders = directSetCookieHeaders.length
+    ? directSetCookieHeaders.flatMap(cookie => splitCookiesString(cookie))
+    : fallbackSetCookieHeader
+      ? splitCookiesString(fallbackSetCookieHeader)
+      : []
 
   setCookieHeaders.forEach((cookie) => {
     appendResponseHeader(event, 'set-cookie', cookie)

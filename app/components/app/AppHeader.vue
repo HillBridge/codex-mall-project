@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { LogOut, Menu, Search, User, X } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
-import { useLoggedInHintCookie } from '~/composables/useLoggedInHintCookie'
 import { useSessionStore } from '~/stores/session'
+import { hasLoggedInHintCookie } from '~/utils/auth-cookie'
 
 const appConfig = useAppConfig()
 const runtimeConfig = useRuntimeConfig()
@@ -11,7 +11,6 @@ const navItems = appConfig.navigation as Array<{ label: string, to: string }> | 
 const session = useSessionStore()
 const route = useRoute()
 const menuOpen = ref(false)
-const loggedInHint = useLoggedInHintCookie()
 
 const productName = computed(() => productConfig?.name || runtimeConfig.public.appName)
 const navigation = computed(() => navItems || [
@@ -28,8 +27,7 @@ watch(
 )
 
 onMounted(() => {
-  console.log('fetchCurrentUser---header mounted', session.ready, loggedInHint.value)
-  if (!session.ready && loggedInHint.value === '1') {
+  if (!session.ready && hasLoggedInHintCookie()) {
     void session.fetchCurrentUser()
   }
 })

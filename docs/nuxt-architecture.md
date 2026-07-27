@@ -67,7 +67,7 @@ SPA 常把 token 放浏览器存储，Nuxt 更适合用 httpOnly Cookie，让服
 - `app/stores/session.ts`
 - `app/pages/account/profile.vue`
 
-生产环境建议把内存 Map 替换为 Redis、数据库会话表或后端统一 session 服务。
+当前后端使用 HMAC 签名的无状态 session token，不依赖进程内存 Map。生产环境可以继续使用签名 token，也可以按业务需要替换为 Redis、数据库会话表或后端统一 session 服务。
 
 ### BFF 与接口聚合
 

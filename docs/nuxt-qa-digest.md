@@ -316,15 +316,16 @@ BFF 层在 SSR 或服务端接口请求真实后端时，是在“代替当前�
 
 - `httpOnly: true`
 - JS 读不到
-- 后端用它识别用户身份
+- 后端用它识别用户身份，当前实现是 backend HMAC 签名 token
 - 不能暴露给前端
+- 不依赖 backend 进程内存 Map，刷新、热更新或多实例时不会因为内存 session 丢失而天然失效
 
 `nuxt_pilot_logged_in`
 
 前端可读的登录提示位：
 
 - `httpOnly: false`
-- JS 可以通过 `useCookie` 读取
+- JS 可以通过 `document.cookie` 只读判断
 - 值只有 `1`
 - 不代表真实身份
 - 只用于判断是否需要调用 `/api/auth/me` 尝试恢复登录态
@@ -347,9 +348,9 @@ loggedInHint.value = "1";
 修复方案：
 
 - 抽出 `shared/constants/auth.ts`，统一 cookie 名称和过期时间
-- 抽出 `useLoggedInHintCookie`
-- 前端写 `nuxt_pilot_logged_in` 时也带上 `maxAge/path/sameSite`
-- 服务端和客户端使用同一份 cookie 常量
+- `nuxt_pilot_logged_in` 只由真实后端创建和删除
+- 前端只通过 `hasLoggedInHintCookie()` 做浏览器只读判断，不再使用 Nuxt `useCookie()` 写这个 cookie
+- 兼容历史遗留的 `%221%22`，避免旧值被误判为空值后又被前端同步删除
 
 ## 16. 当前落地文件
 
@@ -357,10 +358,10 @@ loggedInHint.value = "1";
 
 - `app/plugins/api.ts`
 - `app/utils/api-client.ts`
+- `app/utils/auth-cookie.ts`
 - `app/composables/useApiClient.ts`
 - `app/composables/useApiData.js`
 - `app/composables/useQueryDrivenList.ts`
-- `app/composables/useLoggedInHintCookie.ts`
 - `app/stores/session.ts`
 - `backend/app.mjs`
 - `backend/services/session-service.mjs`

@@ -27,7 +27,14 @@ export type ApiClient = <TPath extends string>(
 type CreateApiClientOptions = {
   baseURL: string
   forwardedHeaders?: Record<string, string | undefined>
+  fetcher?: ApiClientFetcher
 }
+
+export type ApiClientFetcher = <T>(request: string, opts?: ApiClientOptions & {
+  baseURL?: string
+  retry?: number
+  credentials?: RequestCredentials
+}) => Promise<T>
 
 type BaseApiFetch = <T>(request: string, opts?: ApiClientOptions & {
   credentials?: RequestCredentials
@@ -36,7 +43,7 @@ type BaseApiFetch = <T>(request: string, opts?: ApiClientOptions & {
 const baseFetchCache = new Map<string, BaseApiFetch>()
 
 export function createApiClient(options: CreateApiClientOptions): ApiClient {
-  const client = getBaseApiFetch(options.baseURL)
+  const client = getBaseApiFetch(options.baseURL, options.fetcher)
 
   return async function apiClient<TPath extends string>(
     path: TPath,
@@ -56,25 +63,37 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
   }
 }
 
-function getBaseApiFetch(baseURL: string) {
+function getBaseApiFetch(baseURL: string, fetcher?: ApiClientFetcher) {
+  if (fetcher) {
+    return createBaseApiFetch(baseURL, fetcher)
+  }
+
   const cachedClient = baseFetchCache.get(baseURL)
 
   if (cachedClient) {
     return cachedClient
   }
 
-  const client = $fetch.create({
-    baseURL,
-    retry: 0,
-    timeout: 15000,
-    onResponseError({ response }) {
-      throw normalizeApiError(response.status, response._data)
-    }
-  }) as unknown as BaseApiFetch
+  const client = createBaseApiFetch(baseURL, $fetch as ApiClientFetcher)
 
   baseFetchCache.set(baseURL, client)
 
   return client
+}
+
+function createBaseApiFetch(baseURL: string, fetcher: ApiClientFetcher): BaseApiFetch {
+  return async function baseApiFetch<T>(request: string, opts: ApiClientOptions = {}) {
+    try {
+      return await fetcher<T>(request, {
+        ...opts,
+        baseURL,
+        retry: 0,
+        timeout: opts.timeout || 15000
+      })
+    } catch (error) {
+      throw normalizeFetchError(error)
+    }
+  }
 }
 
 function createRequestHeaders(
@@ -106,6 +125,17 @@ function normalizeApiError(statusCode: number, payload?: { message?: string, sta
   error.code = body?.code || statusToCode(statusCode)
   error.traceId = body?.traceId
   error.details = body?.details
+
+  return error
+}
+
+function normalizeFetchError(error: unknown) {
+  if (error && typeof error === 'object' && 'response' in error) {
+    const response = (error as { response?: { status: number, _data?: { message?: string, statusMessage?: string, data?: ApiFailure } } }).response
+    if (response) {
+      return normalizeApiError(response.status, response._data)
+    }
+  }
 
   return error
 }

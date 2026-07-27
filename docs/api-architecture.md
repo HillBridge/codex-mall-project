@@ -201,6 +201,8 @@ throwApiError(event, {
 NUXT_API_BASE_INTERNAL=http://127.0.0.1:4000
 ```
 
+SSR 页面、中间件和 store 里通过 `$api` 请求 Nuxt `/api/*` 时，服务端必须使用 Nuxt 的 `useRequestFetch()`。裸 `ofetch` 在 Node 服务端不能解析 `/api/auth/me` 这种相对地址，并且不会天然绑定当前 SSR 请求上下文；这会导致受保护页面刷新时恢复登录态失败，然后被 `auth` 中间件重定向到登录页。
+
 ## 5. 安全边界
 
 位置：`server/middleware`
