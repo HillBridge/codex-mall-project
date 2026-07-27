@@ -3,6 +3,7 @@ import { ArrowRight, ShieldCheck, Sparkles, TimerReset } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { useApiData } from '~/composables/useApiData'
 import { usePageSeo } from '~/composables/usePageSeo'
+import ProductCard from '~/features/products/components/ProductCard.vue'
 import type { ProductSummary } from '~~/shared/types/product'
 
 usePageSeo({

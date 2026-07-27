@@ -45,14 +45,7 @@ export default defineNuxtConfig({
   imports: {
     scan: false
   },
-  components: [
-    '~/components',
-    {
-      path: '~/features',
-      pattern: '**/components/**/*.vue',
-      pathPrefix: false
-    }
-  ],
+  components: ['~/components'],
   experimental: {
     typedPages: true
   },

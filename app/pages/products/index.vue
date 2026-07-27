@@ -2,8 +2,9 @@
 import { Search } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
 import { usePageSeo } from '~/composables/usePageSeo'
-import type { ProductFilter } from '~/features/products/types'
+import ProductCard from '~/features/products/components/ProductCard.vue'
 import { useProductCatalog } from '~/features/products/composables/useProductCatalog'
+import type { ProductFilter } from '~/features/products/types'
 import type { ProductSummary } from '~~/shared/types/product'
 
 usePageSeo({
