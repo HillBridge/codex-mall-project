@@ -1,5 +1,3 @@
-import { useRequestHeaders } from '#app/composables/ssr'
-import { defineNuxtPlugin, useRuntimeConfig } from '#app/nuxt'
 import { createApiClient } from '~/utils/api-client'
 
 export default defineNuxtPlugin(() => {

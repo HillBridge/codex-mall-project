@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { createError } from '#app/composables/error'
-import { useRoute } from '#app/composables/router'
 import { ArrowLeft, ShoppingBag } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { useApiData } from '~/composables/useApiData'

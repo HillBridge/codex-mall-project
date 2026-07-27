@@ -1,4 +1,3 @@
-import { defineNuxtRouteMiddleware, navigateTo } from '#app/composables/router'
 import { useSessionStore } from '~/stores/session'
 
 export default defineNuxtRouteMiddleware(async (to) => {

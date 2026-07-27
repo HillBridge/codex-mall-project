@@ -1,4 +1,3 @@
-import { useAsyncData } from '#app/composables/asyncData'
 import { isRef, toValue } from 'vue'
 import { useApiClient } from './useApiClient'
 

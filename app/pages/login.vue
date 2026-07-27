@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { navigateTo, useRoute } from '#app/composables/router'
 import { LogIn } from 'lucide-vue-next'
 import { reactive, ref } from 'vue'
 import { z } from 'zod'

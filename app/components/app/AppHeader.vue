@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import { useAppConfig } from '#app/config'
-import { useRoute } from '#app/composables/router'
-import { useRuntimeConfig } from '#app/nuxt'
 import { LogOut, Menu, Search, User, X } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useLoggedInHintCookie } from '~/composables/useLoggedInHintCookie'

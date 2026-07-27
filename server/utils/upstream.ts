@@ -1,4 +1,3 @@
-import { useRuntimeConfig } from '#imports'
 import { appendResponseHeader, getHeader } from 'h3'
 import type { H3Event } from 'h3'
 import type { ApiErrorCode, ApiFailure } from '~~/shared/types/api'

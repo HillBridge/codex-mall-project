@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useRoute, useRouter } from '#app/composables/router'
-import { watchDebounced } from '#imports'
 import { Search } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
 import { usePageSeo } from '~/composables/usePageSeo'

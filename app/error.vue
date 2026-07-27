@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { clearError } from '#app/composables/error'
 import { ArrowLeft, RefreshCcw } from 'lucide-vue-next'
 import { computed } from 'vue'
 

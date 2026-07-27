@@ -1,4 +1,3 @@
-import { navigateTo } from '#app/composables/router'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { useApiClient } from '~/composables/useApiClient'
