@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { definePageMeta } from '#app/composables/pages'
+import { usePageSeo } from '~/composables/usePageSeo'
+import { useSessionStore } from '~/stores/session'
+
 definePageMeta({
   middleware: 'auth'
 })

@@ -1,6 +1,11 @@
 <script setup lang="ts">
+import { useRoute, useRouter } from '#app/composables/router'
+import { watchDebounced } from '#imports'
 import { Search } from 'lucide-vue-next'
+import { computed, onMounted, ref, watch } from 'vue'
+import { usePageSeo } from '~/composables/usePageSeo'
 import type { ProductFilter } from '~/features/products/types'
+import { useProductCatalog } from '~/features/products/composables/useProductCatalog'
 import type { ProductSummary } from '~~/shared/types/product'
 
 usePageSeo({
@@ -46,7 +51,7 @@ watch(
 onMounted(() => {
   watchDebounced(
     qDraft,
-    async (value) => {
+    async (value: string) => {
       const nextQ = value || ''
       if (nextQ === (filter.value.q || '')) return
 

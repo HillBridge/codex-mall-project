@@ -1,3 +1,4 @@
+import { defineEventHandler, getQuery } from 'h3'
 import type { ApiSuccess } from '~~/shared/types/api'
 import type { ProductSummary } from '~~/shared/types/product'
 import { apiOk } from '../../utils/api-response'

@@ -43,7 +43,7 @@ export default defineNuxtConfig({
     }
   },
   imports: {
-    dirs: ['stores', 'composables', 'features/**/composables']
+    scan: false
   },
   components: [
     '~/components',

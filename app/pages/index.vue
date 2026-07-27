@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ArrowRight, ShieldCheck, Sparkles, TimerReset } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { useApiData } from '~/composables/useApiData'
+import { usePageSeo } from '~/composables/usePageSeo'
 import type { ProductSummary } from '~~/shared/types/product'
 
 usePageSeo({

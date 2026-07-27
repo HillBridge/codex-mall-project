@@ -1,3 +1,4 @@
+import { $fetch } from 'ofetch'
 import type { ApiClientError, ApiErrorCode, ApiFailure, ApiResponseFor, ApiSuccess } from '~~/shared/types/api'
 
 type HttpMethod =

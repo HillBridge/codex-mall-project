@@ -1,3 +1,4 @@
+import { defineEventHandler, getHeader, getRequestURL } from 'h3'
 import { throwApiError } from '../utils/api-response'
 
 const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])

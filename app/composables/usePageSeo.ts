@@ -1,3 +1,6 @@
+import { useSeoMeta } from '#app/composables/head'
+import { useRuntimeConfig } from '#app/nuxt'
+
 type SeoInput = {
   title: string
   description: string

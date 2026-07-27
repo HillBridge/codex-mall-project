@@ -1,5 +1,11 @@
 <script setup lang="ts">
+import { useAppConfig } from '#app/config'
+import { useRoute } from '#app/composables/router'
+import { useRuntimeConfig } from '#app/nuxt'
 import { LogOut, Menu, Search, User, X } from 'lucide-vue-next'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useLoggedInHintCookie } from '~/composables/useLoggedInHintCookie'
+import { useSessionStore } from '~/stores/session'
 
 const appConfig = useAppConfig()
 const runtimeConfig = useRuntimeConfig()
@@ -52,8 +58,14 @@ onMounted(() => {
       <NuxtLink class="icon-button" to="/account/profile" aria-label="账户" title="账户">
         <User :size="19" />
       </NuxtLink>
-      <button v-if="session.user" class="icon-button" type="button" aria-label="退出登录" title="退出登录"
-        @click="session.logout()">
+      <button
+        v-if="session.user"
+        class="icon-button"
+        type="button"
+        aria-label="退出登录"
+        title="退出登录"
+        @click="session.logout()"
+      >
         <LogOut :size="19" />
       </button>
       <button class="icon-button mobile-menu" type="button" aria-label="打开菜单" @click="menuOpen = !menuOpen">

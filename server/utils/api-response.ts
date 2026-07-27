@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto'
+import { createError, getHeader } from 'h3'
 import type { H3Event } from 'h3'
 import type { ApiErrorCode, ApiFailure, ApiSuccess } from '~~/shared/types/api'
 
@@ -9,7 +11,7 @@ type ApiErrorInput = {
 }
 
 export function getTraceId(event: H3Event) {
-  return String(event.context.requestId || getHeader(event, 'x-request-id') || crypto.randomUUID())
+  return String(event.context.requestId || getHeader(event, 'x-request-id') || randomUUID())
 }
 
 export function apiOk<T>(event: H3Event, data: T): ApiSuccess<T> {

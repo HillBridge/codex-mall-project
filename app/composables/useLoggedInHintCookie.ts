@@ -1,3 +1,4 @@
+import { useCookie } from '#app/composables/cookie'
 import { AUTH_COOKIE_MAX_AGE, LOGGED_IN_HINT_COOKIE_NAME } from '~~/shared/constants/auth'
 
 export function useLoggedInHintCookie() {

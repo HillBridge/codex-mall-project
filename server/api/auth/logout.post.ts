@@ -1,3 +1,4 @@
+import { defineEventHandler } from 'h3'
 import { apiOk } from '../../utils/api-response'
 import { createUpstreamClient } from '../../utils/upstream'
 

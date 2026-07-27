@@ -1,3 +1,4 @@
+import { defineEventHandler, readBody } from 'h3'
 import { apiOk } from '../../utils/api-response'
 import { createUpstreamClient } from '../../utils/upstream'
 import type { UserProfile } from '~~/shared/types/user'

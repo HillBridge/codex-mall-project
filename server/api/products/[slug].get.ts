@@ -1,3 +1,4 @@
+import { defineEventHandler, getRouterParam } from 'h3'
 import type { ApiSuccess } from '~~/shared/types/api'
 import type { ProductDetail } from '~~/shared/types/product'
 import { apiOk, throwApiError } from '../../utils/api-response'

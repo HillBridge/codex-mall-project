@@ -1,3 +1,6 @@
+import type { Ref } from 'vue'
+import { useApiClient } from '~/composables/useApiClient'
+import { useQueryDrivenList } from '~/composables/useQueryDrivenList'
 import type { ProductFilter } from '../types'
 import type { ProductSummary } from '~~/shared/types/product'
 
