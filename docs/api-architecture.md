@@ -185,18 +185,20 @@ throwApiError(event, {
 
 位置：`server/utils/upstream.ts`
 
-`createUpstreamClient(event)` 用于 Nuxt BFF 请求真实后端。它统一处理：
+`createUpstreamClient(event)` 用于 Nuxt BFF 请求 `backend/` Koa 真实后端。它统一处理：
 
 - `runtimeConfig.apiBaseInternal`
+- 当前浏览器 cookie 转发
+- 上游 `Set-Cookie` 回写浏览器
 - `x-request-id` 透传
 - 超时
 - 简单重试
 - 上游错误映射
 
-现在商品服务在没有 `apiBaseInternal` 时使用 mock 数据；配置后会走真实上游：
+当前默认真实后端地址：
 
 ```ts
-NUXT_API_BASE_INTERNAL=https://backend.example.com
+NUXT_API_BASE_INTERNAL=http://127.0.0.1:4000
 ```
 
 ## 5. 安全边界

@@ -57,7 +57,7 @@ SPA 只在浏览器请求数据，Nuxt 会先在服务端跑一次，再在客�
 
 ### 鉴权边界
 
-SPA 常把 token 放浏览器存储，Nuxt 更适合用 httpOnly Cookie，让服务端也能判断登录态。项目用 `server/utils/session.ts` 管 Cookie，会话页用 `app/middleware/auth.ts` 拦截。
+SPA 常把 token 放浏览器存储，Nuxt 更适合用 httpOnly Cookie，让服务端也能判断登录态。项目由 `backend/` Koa 服务管理真实 Cookie 会话，Nuxt `server/api` 作为 BFF 转发 cookie 与 `Set-Cookie`，会话页用 `app/middleware/auth.ts` 拦截。
 
 落地点：
 
@@ -77,10 +77,11 @@ Nuxt 的 `server/api` 不是简单 mock，而是前端项目里的 BFF 层。它
 
 - `server/api/products/index.get.ts`
 - `server/api/products/[slug].get.ts`
-- `server/services/product-service.ts`
+- `backend/app.mjs`
+- `backend/services/session-service.mjs`
 - `server/utils/upstream.ts`
 
-后续接真实后端时，页面和组件无需改动，只替换 BFF 内部实现。
+当前真实后端已放在 `backend/`，由 Koa 实现。页面和组件不直接请求 Koa，只访问 Nuxt `/api/*`，BFF 负责协议适配和安全边界。
 
 ### 缓存策略
 

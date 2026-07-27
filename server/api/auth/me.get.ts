@@ -1,16 +1,8 @@
-import { getSessionUser } from '../../utils/session'
-import { apiOk, throwApiError } from '../../utils/api-response'
+import { apiOk } from '../../utils/api-response'
+import { createUpstreamClient } from '../../utils/upstream'
+import type { UserProfile } from '~~/shared/types/user'
 
 export default defineEventHandler((event) => {
-  const user = getSessionUser(event)
-
-  if (!user) {
-    throwApiError(event, {
-      statusCode: 401,
-      code: 'UNAUTHORIZED',
-      message: '未登录'
-    })
-  }
-
-  return apiOk(event, user)
+  const upstreamFetch = createUpstreamClient(event)
+  return upstreamFetch<UserProfile>('/auth/me').then(user => apiOk(event, user))
 })

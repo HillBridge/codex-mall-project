@@ -25,6 +25,7 @@ watch(
 )
 
 onMounted(() => {
+  console.log('fetchCurrentUser---header mounted', session.ready, loggedInHint.value)
   if (!session.ready && loggedInHint.value === '1') {
     void session.fetchCurrentUser()
   }
@@ -39,13 +40,7 @@ onMounted(() => {
     </NuxtLink>
 
     <nav class="desktop-nav" aria-label="主导航">
-      <NuxtLink
-        v-for="item in navigation"
-        :key="item.to"
-        :to="item.to"
-        class="nav-link"
-        active-class="active"
-      >
+      <NuxtLink v-for="item in navigation" :key="item.to" :to="item.to" class="nav-link" active-class="active">
         {{ item.label }}
       </NuxtLink>
     </nav>
@@ -57,14 +52,8 @@ onMounted(() => {
       <NuxtLink class="icon-button" to="/account/profile" aria-label="账户" title="账户">
         <User :size="19" />
       </NuxtLink>
-      <button
-        v-if="session.user"
-        class="icon-button"
-        type="button"
-        aria-label="退出登录"
-        title="退出登录"
-        @click="session.logout()"
-      >
+      <button v-if="session.user" class="icon-button" type="button" aria-label="退出登录" title="退出登录"
+        @click="session.logout()">
         <LogOut :size="19" />
       </button>
       <button class="icon-button mobile-menu" type="button" aria-label="打开菜单" @click="menuOpen = !menuOpen">

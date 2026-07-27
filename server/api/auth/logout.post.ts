@@ -1,7 +1,9 @@
-import { clearUserSession } from '../../utils/session'
 import { apiOk } from '../../utils/api-response'
+import { createUpstreamClient } from '../../utils/upstream'
 
-export default defineEventHandler((event) => {
-  clearUserSession(event)
-  return apiOk(event, { ok: true })
+export default defineEventHandler(async (event) => {
+  const upstreamFetch = createUpstreamClient(event)
+  const data = await upstreamFetch<{ ok: true }>('/auth/logout', { method: 'POST' })
+
+  return apiOk(event, data)
 })

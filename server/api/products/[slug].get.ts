@@ -1,7 +1,7 @@
 import type { ApiSuccess } from '~~/shared/types/api'
 import type { ProductDetail } from '~~/shared/types/product'
 import { apiOk, throwApiError } from '../../utils/api-response'
-import { getProductBySlug } from '../../services/product-service'
+import { createUpstreamClient } from '../../utils/upstream'
 
 export default defineEventHandler(async (event): Promise<ApiSuccess<ProductDetail>> => {
   const slug = getRouterParam(event, 'slug')
@@ -14,15 +14,8 @@ export default defineEventHandler(async (event): Promise<ApiSuccess<ProductDetai
     })
   }
 
-  const product: ProductDetail | null = await getProductBySlug(event, slug)
-
-  if (!product) {
-    throwApiError(event, {
-      statusCode: 404,
-      code: 'NOT_FOUND',
-      message: '商品不存在'
-    })
-  }
+  const upstreamFetch = createUpstreamClient(event)
+  const product = await upstreamFetch<ProductDetail>(`/products/${slug}`)
 
   return apiOk(event, product)
 })

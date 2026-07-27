@@ -6,6 +6,7 @@
 
 ```bash
 pnpm install
+pnpm backend
 pnpm dev
 ```
 
@@ -30,8 +31,11 @@ app/
 server/
   api/                 Nitro BFF 接口
   middleware/          服务端请求中间件
-  services/            BFF 服务层，隔离 mock 和真实上游
-  utils/               服务端工具、会话、响应协议、上游 client 和模拟数据
+  utils/               服务端响应协议和上游 client
+backend/
+  app.mjs              Koa 真实后端服务
+  services/            真实后端业务服务
+  data/                演示数据源
 shared/
   types/               前后端共享类型和 API 契约
 docs/
@@ -43,10 +47,11 @@ docs/
 
 - SSR 首屏数据：`app/pages/index.vue` 和 `app/pages/products/index.vue`
 - BFF 接口：`server/api/products/*`、`server/api/auth/*`
+- Koa 真实后端：`backend/app.mjs`
 - API 请求封装：`app/composables/useApiClient.ts`、`app/composables/useApiData.js`
 - API 响应协议：`server/utils/api-response.ts`
 - 服务端上游 client：`server/utils/upstream.ts`
-- Cookie 鉴权：`server/utils/session.ts`、`app/middleware/auth.ts`
+- Cookie 鉴权：`backend/services/session-service.mjs`、`app/middleware/auth.ts`
 - 状态管理：`app/stores/session.ts`
 - SEO：`app/composables/usePageSeo.ts`
 - 路由缓存：`nuxt.config.ts` 的 `routeRules`

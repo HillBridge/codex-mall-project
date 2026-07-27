@@ -18,7 +18,7 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     sessionSecret: '',
-    apiBaseInternal: '',
+    apiBaseInternal: 'http://127.0.0.1:4000',
     public: {
       appName: 'Nuxt Pilot',
       apiBase: '/api',
