@@ -1,6 +1,13 @@
+import { createHash, createHmac } from 'node:crypto'
 import { appendResponseHeader, getCookie, getHeader, getRequestURL, splitCookiesString } from 'h3'
 import type { H3Event } from 'h3'
 import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME, SESSION_COOKIE_NAME } from '~~/shared/constants/auth'
+import {
+  SERVICE_ID_HEADER,
+  SERVICE_SIGNATURE_HEADER,
+  SERVICE_TIMESTAMP_HEADER,
+  SERVICE_TOKEN_HEADER
+} from '~~/shared/constants/service-auth'
 import type { ApiErrorCode, ApiFailure } from '~~/shared/types/api'
 import { getTraceId, throwApiError } from './api-response'
 
@@ -21,9 +28,19 @@ type UpstreamOptions = {
   timeout?: number
 }
 
+type ServiceAuthConfig = {
+  serviceId: string
+  serviceToken: string
+  signatureSecret: string
+}
+
+const DEFAULT_SERVICE_TOKEN = 'nuxt-pilot-local-service-token'
+const DEFAULT_SERVICE_SIGNATURE_SECRET = 'nuxt-pilot-local-service-signature-secret'
+
 export function createUpstreamClient(event: H3Event) {
   const config = useRuntimeConfig(event)
   const baseURL = config.apiBaseInternal
+  const serviceAuth = createServiceAuthConfig(event, config)
 
   return async function upstreamFetch<T>(path: string, options: UpstreamOptions = {}): Promise<T> {
     if (!baseURL) {
@@ -35,7 +52,7 @@ export function createUpstreamClient(event: H3Event) {
     }
 
     try {
-      const response = await fetchUpstream(event, baseURL, path, options)
+      const response = await fetchUpstream(event, baseURL, path, options, serviceAuth)
 
       forwardSetCookieHeaders(event, response.headers)
 
@@ -69,7 +86,8 @@ async function fetchUpstream(
   event: H3Event,
   baseURL: string,
   path: string,
-  options: UpstreamOptions
+  options: UpstreamOptions,
+  serviceAuth: ServiceAuthConfig
 ) {
   const timeout = options.timeout || 15000
   let lastError: unknown
@@ -79,10 +97,14 @@ async function fetchUpstream(
     const timeoutId = setTimeout(() => controller.abort(), timeout)
 
     try {
-      return await fetch(createUpstreamURL(baseURL, path, options.query), {
-        method: options.method || 'GET',
-        headers: createUpstreamHeaders(event, options.headers, options.body),
-        body: createUpstreamBody(options.body),
+      const method = options.method || 'GET'
+      const requestURL = createUpstreamURL(baseURL, path, options.query)
+      const requestBody = createUpstreamBody(options.body)
+
+      return await fetch(requestURL, {
+        method,
+        headers: createUpstreamHeaders(event, options.headers, method, requestURL, requestBody, serviceAuth),
+        body: requestBody,
         signal: controller.signal
       })
     } catch (error) {
@@ -117,7 +139,14 @@ function ensureTrailingSlash(value: string) {
   return value.endsWith('/') ? value : `${value}/`
 }
 
-function createUpstreamHeaders(event: H3Event, input?: HeadersInit, body?: unknown) {
+function createUpstreamHeaders(
+  event: H3Event,
+  input: HeadersInit | undefined,
+  method: HttpMethod,
+  upstreamURL: URL,
+  body: string | undefined,
+  serviceAuth: ServiceAuthConfig
+) {
   const headers = new Headers(input)
   const requestURL = getRequestURL(event)
 
@@ -136,7 +165,34 @@ function createUpstreamHeaders(event: H3Event, input?: HeadersInit, body?: unkno
     headers.set('cookie', cookie)
   }
 
+  setServiceAuthHeaders(headers, method, upstreamURL, body, serviceAuth)
+
   return headers
+}
+
+function setServiceAuthHeaders(
+  headers: Headers,
+  method: HttpMethod,
+  upstreamURL: URL,
+  body: string | undefined,
+  serviceAuth: ServiceAuthConfig
+) {
+  const timestamp = String(Math.floor(Date.now() / 1000))
+
+  headers.set(SERVICE_ID_HEADER, serviceAuth.serviceId)
+  headers.set(SERVICE_TOKEN_HEADER, serviceAuth.serviceToken)
+  headers.set(SERVICE_TIMESTAMP_HEADER, timestamp)
+  headers.set(
+    SERVICE_SIGNATURE_HEADER,
+    createServiceSignature({
+      secret: serviceAuth.signatureSecret,
+      serviceId: serviceAuth.serviceId,
+      timestamp,
+      method,
+      path: createSignedPath(upstreamURL),
+      body: body || ''
+    })
+  )
 }
 
 function copyHeader(event: H3Event, headers: Headers, name: string) {
@@ -154,9 +210,67 @@ function createWhitelistedCookieHeader(event: H3Event) {
     .join('; ')
 }
 
-function createUpstreamBody(body: unknown): BodyInit | undefined {
+function createUpstreamBody(body: unknown): string | undefined {
   if (body === undefined) return undefined
   return JSON.stringify(body)
+}
+
+function createServiceAuthConfig(event: H3Event, config: ReturnType<typeof useRuntimeConfig>): ServiceAuthConfig {
+  const serviceId = config.upstreamServiceId || process.env.BFF_SERVICE_ID || 'nuxt-bff'
+  const serviceToken = config.upstreamServiceToken || process.env.BFF_SERVICE_TOKEN || getLocalDefault(DEFAULT_SERVICE_TOKEN)
+  const signatureSecret = config.upstreamServiceSignatureSecret || process.env.BFF_SERVICE_SIGNATURE_SECRET || getLocalDefault(DEFAULT_SERVICE_SIGNATURE_SECRET)
+
+  if (!serviceToken || !signatureSecret) {
+    throwApiError(event, {
+      statusCode: 500,
+      code: 'INTERNAL_ERROR',
+      message: '未配置上游服务认证信息'
+    })
+  }
+
+  return {
+    serviceId,
+    serviceToken,
+    signatureSecret
+  }
+}
+
+function createServiceSignature({
+  secret,
+  serviceId,
+  timestamp,
+  method,
+  path,
+  body
+}: {
+  secret: string
+  serviceId: string
+  timestamp: string
+  method: HttpMethod
+  path: string
+  body: string
+}) {
+  const payload = [
+    method.toUpperCase(),
+    path,
+    hashBody(body),
+    timestamp,
+    serviceId
+  ].join('\n')
+
+  return createHmac('sha256', secret).update(payload).digest('base64url')
+}
+
+function createSignedPath(url: URL) {
+  return `${url.pathname}${url.search}`
+}
+
+function hashBody(body: string) {
+  return createHash('sha256').update(body).digest('base64url')
+}
+
+function getLocalDefault(value: string) {
+  return process.env.NODE_ENV === 'production' ? '' : value
 }
 
 async function readJsonBody<T>(response: Response): Promise<T> {

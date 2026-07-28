@@ -19,6 +19,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     sessionSecret: '',
     apiBaseInternal: 'http://127.0.0.1:4000',
+    upstreamServiceId: process.env.BFF_SERVICE_ID || 'nuxt-bff',
+    upstreamServiceToken: process.env.BFF_SERVICE_TOKEN || '',
+    upstreamServiceSignatureSecret: process.env.BFF_SERVICE_SIGNATURE_SECRET || '',
     public: {
       appName: 'Nuxt Pilot',
       apiBase: '/api',

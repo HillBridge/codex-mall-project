@@ -6,8 +6,10 @@ import { demoUser, toUserProfile } from './data/users.mjs'
 import { products, toProductSummary } from './data/products.mjs'
 import { clearSession, createSession, getSessionUser, isValidCsrfRequest } from './services/session-service.mjs'
 import { createHttpError } from './utils/http-error.mjs'
+import { isValidServiceRequest } from './utils/service-auth.mjs'
 
 const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+const serviceAuthExemptPaths = new Set(['/health'])
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -47,6 +49,14 @@ export function createBackendApp() {
   })
 
   app.use(bodyParser())
+
+  app.use(async (ctx, next) => {
+    if (!serviceAuthExemptPaths.has(ctx.path) && !isValidServiceRequest(ctx)) {
+      throw createHttpError(403, 'FORBIDDEN', '非法服务调用')
+    }
+
+    await next()
+  })
 
   app.use(async (ctx, next) => {
     if (unsafeMethods.has(ctx.method.toUpperCase()) && ctx.path !== '/auth/login' && !isValidCsrfRequest(ctx)) {

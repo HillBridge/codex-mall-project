@@ -323,6 +323,65 @@ BFF 为请求生成或透传 `x-request-id`，并把它作为 `traceId` 放入�
 
 这 10 条策略定位是：BFF 做浏览器入口防护和协议边界，真实后端仍然负责最终身份校验、CSRF 校验、权限判断和业务执行。
 
+### BFF 到 Backend 的服务间认证
+
+浏览器到 BFF 的安全由同源、CSRF、Cookie 和安全头负责；BFF 到真实 backend 是服务端到服务端调用，不受浏览器 CORS 保护，因此 backend 还需要识别“调用我的服务是谁”。
+
+当前项目在 BFF 调 Koa backend 时会附加服务凭证和请求签名：
+
+```txt
+x-service-id: nuxt-bff
+x-service-token: <service-token>
+x-service-timestamp: <unix-seconds>
+x-service-signature: <hmac-signature>
+```
+
+签名覆盖：
+
+```txt
+HTTP method
+path + query
+sha256(raw body)
+timestamp
+service id
+```
+
+backend 校验：
+
+- `x-service-id` 是否是受信任服务
+- `x-service-token` 是否正确
+- `x-service-timestamp` 是否在允许时间窗口内
+- `x-service-signature` 是否和 method/path/body/timestamp/serviceId 匹配
+
+这可以防止：
+
+- 绕过 BFF 直连 backend
+- 伪造服务身份
+- 篡改请求 method/path/body
+- 使用过期请求进行重放
+
+生产环境需要配置：
+
+```txt
+BFF_SERVICE_ID=nuxt-bff
+BFF_SERVICE_TOKEN=<strong-random-token>
+BFF_SERVICE_SIGNATURE_SECRET=<strong-random-secret>
+
+BACKEND_TRUSTED_SERVICE_ID=nuxt-bff
+BACKEND_SERVICE_TOKEN=<same-strong-random-token>
+BACKEND_SERVICE_SIGNATURE_SECRET=<same-strong-random-secret>
+```
+
+Nuxt 生产部署也可以使用 runtimeConfig 的环境变量覆盖形式：
+
+```txt
+NUXT_UPSTREAM_SERVICE_ID=nuxt-bff
+NUXT_UPSTREAM_SERVICE_TOKEN=<strong-random-token>
+NUXT_UPSTREAM_SERVICE_SIGNATURE_SECRET=<strong-random-secret>
+```
+
+本地开发没有显式配置时会使用本地默认值；生产环境没有配置 token 或签名密钥时，BFF 会拒绝调用上游，backend 也会拒绝非 health 的业务接口。
+
 ## 6. 团队使用约定
 
 - 页面 SSR 数据用 `useApiData`
