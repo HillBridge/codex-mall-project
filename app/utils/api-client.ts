@@ -1,4 +1,6 @@
 import { $fetch } from 'ofetch'
+import { readCsrfCookie } from '~/utils/auth-cookie'
+import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from '~~/shared/constants/auth'
 import type { ApiClientError, ApiErrorCode, ApiFailure, ApiResponseFor, ApiSuccess } from '~~/shared/types/api'
 
 type HttpMethod =
@@ -49,7 +51,7 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     path: TPath,
     requestOptions: ApiClientOptions = {}
   ): Promise<ApiResponseFor<TPath>> {
-    const headers = createRequestHeaders(requestOptions.headers, options.forwardedHeaders)
+    const headers = createRequestHeaders(requestOptions.headers, options.forwardedHeaders, requestOptions.method)
     const response = await client<ApiSuccess<ApiResponseFor<TPath>>>(
       normalizeApiPath(path),
       {
@@ -98,7 +100,8 @@ function createBaseApiFetch(baseURL: string, fetcher: ApiClientFetcher): BaseApi
 
 function createRequestHeaders(
   requestHeaders?: HeadersInit,
-  forwardedHeaders?: Record<string, string | undefined>
+  forwardedHeaders?: Record<string, string | undefined>,
+  method: HttpMethod = 'GET'
 ) {
   const headers = new Headers(requestHeaders)
 
@@ -108,7 +111,31 @@ function createRequestHeaders(
     if (value) headers.set(key, value)
   })
 
+  if (isUnsafeMethod(method) && !headers.has(CSRF_HEADER_NAME)) {
+    const csrfToken = readCsrfToken(headers.get('cookie') || '')
+    if (csrfToken) headers.set(CSRF_HEADER_NAME, csrfToken)
+  }
+
   return headers
+}
+
+function isUnsafeMethod(method: HttpMethod) {
+  return method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE'
+}
+
+function readCsrfToken(cookieHeader: string) {
+  if (import.meta.client) return readCsrfCookie()
+  return readCookieValue(cookieHeader, CSRF_COOKIE_NAME)
+}
+
+function readCookieValue(cookieHeader: string, name: string) {
+  return cookieHeader
+    .split(';')
+    .map(item => item.trim())
+    .find(item => item.startsWith(`${name}=`))
+    ?.split('=')
+    .slice(1)
+    .join('=') || ''
 }
 
 function normalizeApiPath(path: string) {

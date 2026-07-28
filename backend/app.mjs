@@ -4,8 +4,10 @@ import bodyParser from 'koa-bodyparser'
 import { z } from 'zod'
 import { demoUser, toUserProfile } from './data/users.mjs'
 import { products, toProductSummary } from './data/products.mjs'
-import { clearSession, createSession, getSessionUser } from './services/session-service.mjs'
+import { clearSession, createSession, getSessionUser, isValidCsrfRequest } from './services/session-service.mjs'
 import { createHttpError } from './utils/http-error.mjs'
+
+const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -45,6 +47,14 @@ export function createBackendApp() {
   })
 
   app.use(bodyParser())
+
+  app.use(async (ctx, next) => {
+    if (unsafeMethods.has(ctx.method.toUpperCase()) && ctx.path !== '/auth/login' && !isValidCsrfRequest(ctx)) {
+      throw createHttpError(403, 'FORBIDDEN', 'CSRF 校验失败')
+    }
+
+    await next()
+  })
 
   router.get('/health', (ctx) => {
     ctx.body = {

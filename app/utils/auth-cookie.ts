@@ -1,16 +1,25 @@
-import { LOGGED_IN_HINT_COOKIE_NAME } from '~~/shared/constants/auth'
+import { CSRF_COOKIE_NAME, LOGGED_IN_HINT_COOKIE_NAME } from '~~/shared/constants/auth'
 
 export function hasLoggedInHintCookie() {
   if (!import.meta.client) return false
 
-  return document.cookie
-    .split(';')
-    .some((item) => {
-      const [rawName, ...rawValueParts] = item.trim().split('=')
-      if (rawName !== LOGGED_IN_HINT_COOKIE_NAME) return false
+  return isLoggedInHintValue(readBrowserCookie(LOGGED_IN_HINT_COOKIE_NAME) || '')
+}
 
-      return isLoggedInHintValue(rawValueParts.join('='))
-    })
+export function readCsrfCookie() {
+  if (!import.meta.client) return ''
+  return readBrowserCookie(CSRF_COOKIE_NAME) || ''
+}
+
+function readBrowserCookie(name: string) {
+  const cookie = document.cookie
+    .split(';')
+    .find(item => item.trim().startsWith(`${name}=`))
+
+  if (!cookie) return ''
+
+  const [, ...rawValueParts] = cookie.trim().split('=')
+  return rawValueParts.join('=')
 }
 
 function isLoggedInHintValue(value: string) {

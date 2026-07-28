@@ -1,5 +1,6 @@
-import { appendResponseHeader, getHeader, getRequestURL, splitCookiesString } from 'h3'
+import { appendResponseHeader, getCookie, getHeader, getRequestURL, splitCookiesString } from 'h3'
 import type { H3Event } from 'h3'
+import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME, SESSION_COOKIE_NAME } from '~~/shared/constants/auth'
 import type { ApiErrorCode, ApiFailure } from '~~/shared/types/api'
 import { getTraceId, throwApiError } from './api-response'
 
@@ -118,22 +119,39 @@ function ensureTrailingSlash(value: string) {
 
 function createUpstreamHeaders(event: H3Event, input?: HeadersInit, body?: unknown) {
   const headers = new Headers(input)
-  const cookie = getHeader(event, 'cookie')
   const requestURL = getRequestURL(event)
 
+  headers.delete('cookie')
   headers.set('x-request-id', getTraceId(event))
   headers.set('x-forwarded-host', getHeader(event, 'host') || requestURL.host)
   headers.set('x-forwarded-proto', getHeader(event, 'x-forwarded-proto') || requestURL.protocol.replace(':', ''))
+  copyHeader(event, headers, CSRF_HEADER_NAME)
 
   if (body !== undefined && !headers.has('content-type')) {
     headers.set('content-type', 'application/json')
   }
 
+  const cookie = createWhitelistedCookieHeader(event)
   if (cookie) {
     headers.set('cookie', cookie)
   }
 
   return headers
+}
+
+function copyHeader(event: H3Event, headers: Headers, name: string) {
+  const value = getHeader(event, name)
+  if (value) headers.set(name, value)
+}
+
+function createWhitelistedCookieHeader(event: H3Event) {
+  return [SESSION_COOKIE_NAME, CSRF_COOKIE_NAME]
+    .map((name) => {
+      const value = getCookie(event, name)
+      return value ? `${name}=${encodeURIComponent(value)}` : ''
+    })
+    .filter(Boolean)
+    .join('; ')
 }
 
 function createUpstreamBody(body: unknown): BodyInit | undefined {

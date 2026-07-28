@@ -215,7 +215,113 @@ SSR 页面、中间件和 store 里通过 `$api` 请求 Nuxt `/api/*` 时，服�
 02-api-guard.ts
 ```
 
-`02-api-guard.ts` 对 `POST/PUT/PATCH/DELETE` 的 `/api/*` 请求要求 `x-requested-with: NuxtPilotClient`。这不是完整 CSRF 方案，但能挡住普通跨站表单提交。生产中的订单、支付、资料修改等接口还应加 CSRF token 或后端同等机制。
+### BFF 安全策略
+
+当前 Nuxt BFF 层承担浏览器入口安全网关职责，具体策略如下。
+
+1. 不让浏览器直连真实后端
+
+浏览器只请求 Nuxt `/api/*`，真实 Koa 后端地址只存在于服务端配置 `runtimeConfig.apiBaseInternal` 中。前端业务代码不直接知道真实后端地址。
+
+```txt
+browser -> Nuxt /api/* -> Koa backend
+```
+
+2. 只转发白名单 cookie
+
+BFF 收到浏览器 cookie 后，不再原样全部转发给 backend，只转发真实后端鉴权需要的 cookie：
+
+```txt
+nuxt_pilot_session
+nuxt_pilot_csrf
+```
+
+不会转发：
+
+```txt
+nuxt_pilot_logged_in
+theme
+analytics
+ab_test
+其他浏览器 cookie
+```
+
+这样可以减少 cookie 泄漏、日志污染、名称冲突和后端误读。
+
+3. 正确回写真实后端 Set-Cookie
+
+登录、退出时，真实后端负责创建或清除 cookie。BFF 负责把真实后端返回的多个 `Set-Cookie` 正确回写给浏览器，包括：
+
+```txt
+nuxt_pilot_session
+nuxt_pilot_logged_in
+nuxt_pilot_csrf
+```
+
+4. 写接口基础请求头校验
+
+`02-api-guard.ts` 对 `POST/PUT/PATCH/DELETE` 的 `/api/*` 请求要求：
+
+```txt
+x-requested-with: NuxtPilotClient
+```
+
+普通跨站 HTML 表单无法发送这个自定义请求头，因此会被 BFF 拦截。
+
+5. Origin / Referer 同源校验
+
+写请求如果带 `Origin`，必须等于当前站点 origin；没有 `Origin` 但带 `Referer` 时，`Referer` 也必须来自当前站点。跨站页面伪造写请求会被 BFF 拦截。
+
+6. CSRF token 校验
+
+除登录接口外，写请求必须满足：
+
+```txt
+Cookie: nuxt_pilot_csrf=abc
+x-csrf-token: abc
+```
+
+两边一致才放行。攻击者页面可以诱导浏览器自动带 cookie，但读不到本站的 CSRF cookie，也就构造不出合法的 `x-csrf-token`。
+
+7. SSR 请求绑定当前用户
+
+SSR 页面、中间件和 store 里请求 Nuxt `/api/*` 时，服务端使用 `useRequestFetch()` 和当前请求 headers。这样每个用户的 SSR 请求只携带自己的 cookie，避免服务端进程内 cookie 串号。
+
+8. 统一安全响应头
+
+`01-security-headers.ts` 统一设置：
+
+```txt
+Content-Security-Policy
+X-Content-Type-Options
+Referrer-Policy
+Permissions-Policy
+X-Frame-Options
+Cross-Origin-Opener-Policy
+Cross-Origin-Resource-Policy
+Strict-Transport-Security
+```
+
+这些响应头用于降低 XSS、点击劫持、跨源资源误用和非 HTTPS 访问风险。
+
+9. 接口响应标准化
+
+BFF 不把真实后端原始异常结构直接暴露给前端，而是统一输出：
+
+```txt
+code
+message
+traceId
+details
+```
+
+这样前端可以稳定处理 toast、表单错误、登录失效、监控和客服排查。
+
+10. 请求链路 traceId
+
+BFF 为请求生成或透传 `x-request-id`，并把它作为 `traceId` 放入响应。它用于排查链路问题，同时避免把敏感 token 打进前端错误信息。
+
+这 10 条策略定位是：BFF 做浏览器入口防护和协议边界，真实后端仍然负责最终身份校验、CSRF 校验、权限判断和业务执行。
 
 ## 6. 团队使用约定
 
