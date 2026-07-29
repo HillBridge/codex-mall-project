@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ArrowRight, ShieldCheck, Sparkles, TimerReset } from 'lucide-vue-next'
 import { computed } from 'vue'
+import PendingBlock from '~/components/ui/PendingBlock.vue'
 import { useApiData } from '~/composables/useApiData'
 import { usePageSeo } from '~/composables/usePageSeo'
 import ProductCard from '~/features/products/components/ProductCard.vue'

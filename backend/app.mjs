@@ -6,6 +6,7 @@ import { demoUser, toUserProfile } from './data/users.mjs'
 import { products, toProductSummary } from './data/products.mjs'
 import { clearSession, createSession, getSessionUser, isValidCsrfRequest } from './services/session-service.mjs'
 import { createHttpError } from './utils/http-error.mjs'
+import { logger } from './utils/logger.mjs'
 import { isValidServiceRequest } from './utils/service-auth.mjs'
 
 const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
@@ -31,6 +32,7 @@ export function createBackendApp() {
   const router = new Router()
 
   app.use(async (ctx, next) => {
+    const startedAt = Date.now()
     ctx.state.traceId = ctx.get('x-request-id') || crypto.randomUUID()
     ctx.set('x-request-id', ctx.state.traceId)
 
@@ -45,6 +47,19 @@ export function createBackendApp() {
         traceId: ctx.state.traceId,
         details: error.details
       }
+    } finally {
+      const level = ctx.status >= 500 ? 'error' : ctx.status >= 400 ? 'warn' : 'info'
+
+      logger[level]('backend.access', {
+        traceId: ctx.state.traceId,
+        serviceId: ctx.get('x-service-id') || undefined,
+        method: ctx.method,
+        path: ctx.path,
+        statusCode: ctx.status,
+        durationMs: Date.now() - startedAt,
+        queryKeys: Object.keys(ctx.query || {}),
+        errorCode: ctx.body?.code
+      })
     }
   })
 

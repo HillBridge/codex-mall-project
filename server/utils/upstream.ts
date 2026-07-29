@@ -10,6 +10,7 @@ import {
 } from '~~/shared/constants/service-auth'
 import type { ApiErrorCode, ApiFailure } from '~~/shared/types/api'
 import { getTraceId, throwApiError } from './api-response'
+import { logger } from './logger'
 
 type HttpMethod =
   | 'GET'
@@ -92,6 +93,7 @@ async function fetchUpstream(
   const timeout = options.timeout || 15000
   let lastError: unknown
 
+  // 网络等异常会重试2次
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), timeout)
@@ -100,16 +102,36 @@ async function fetchUpstream(
       const method = options.method || 'GET'
       const requestURL = createUpstreamURL(baseURL, path, options.query)
       const requestBody = createUpstreamBody(options.body)
+      const startedAt = Date.now()
 
-      return await fetch(requestURL, {
+      const response = await fetch(requestURL, {
         method,
         headers: createUpstreamHeaders(event, options.headers, method, requestURL, requestBody, serviceAuth),
         body: requestBody,
         signal: controller.signal
       })
+
+      logger[response.ok ? 'info' : 'warn']('bff.upstream', {
+        traceId: getTraceId(event),
+        method,
+        path: createSignedPath(requestURL),
+        statusCode: response.status,
+        durationMs: Date.now() - startedAt,
+        attempt: attempt + 1
+      })
+
+      return response
     } catch (error) {
       lastError = error
       if (attempt > 0) break
+      logger.warn('bff.upstream', {
+        traceId: getTraceId(event),
+        method: options.method || 'GET',
+        path,
+        durationMs: timeout,
+        attempt: attempt + 1,
+        errorCode: 'UPSTREAM_RETRY'
+      })
     } finally {
       clearTimeout(timeoutId)
     }

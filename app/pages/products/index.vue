@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Search } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
+import EmptyState from '~/components/ui/EmptyState.vue'
+import PendingBlock from '~/components/ui/PendingBlock.vue'
 import { usePageSeo } from '~/composables/usePageSeo'
 import ProductCard from '~/features/products/components/ProductCard.vue'
 import { useProductCatalog } from '~/features/products/composables/useProductCatalog'
