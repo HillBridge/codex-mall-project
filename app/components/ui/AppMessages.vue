@@ -13,6 +13,19 @@ const icons = {
 }
 
 const visibleMessages = computed(() => messages.value)
+
+async function runAction(message: (typeof messages.value)[number]) {
+  dismiss(message.id)
+
+  if (message.action?.kind === 'reload') {
+    window.location.reload()
+    return
+  }
+
+  if (message.action?.kind === 'home') {
+    await navigateTo('/')
+  }
+}
 </script>
 
 <template>
@@ -30,9 +43,19 @@ const visibleMessages = computed(() => messages.value)
           <p v-if="message.description">{{ message.description }}</p>
           <small v-if="message.traceId">错误编号：{{ message.traceId }}</small>
         </div>
-        <button type="button" aria-label="关闭提示" @click="dismiss(message.id)">
-          <X :size="16" />
-        </button>
+        <div class="app-message-actions">
+          <button
+            v-if="message.action"
+            class="app-message-action"
+            type="button"
+            @click="runAction(message)"
+          >
+            {{ message.action.label }}
+          </button>
+          <button class="app-message-close" type="button" aria-label="关闭提示" @click="dismiss(message.id)">
+            <X :size="16" />
+          </button>
+        </div>
       </section>
     </div>
   </Teleport>

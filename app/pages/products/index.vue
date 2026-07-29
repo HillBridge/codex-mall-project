@@ -27,7 +27,6 @@ const { data: products, pending, error, refresh } = await useProductCatalog(filt
 const productList = computed(() => (products.value || []) as ProductSummary[])
 const requestTraceId = import.meta.server ? String(useRequestEvent()?.context.requestId || '') : ''
 const errorView = computed(() => {
-  console.log('error', error.value)
   if (!error.value) return null
   const view = createApiErrorView(error.value, '商品数据加载失败，请稍后重试。')
   return view.traceId || !requestTraceId ? view : { ...view, traceId: requestTraceId }
@@ -104,8 +103,14 @@ async function selectCategory(category: string) {
         <input v-model.trim="qDraft" type="search" placeholder="搜索商品、系列或卖点">
       </label>
       <div class="segment-control">
-        <button v-for="category in categories" :key="category" class="segment"
-          :class="{ active: (filter.category || '全部') === category }" type="button" @click="selectCategory(category)">
+        <button
+          v-for="category in categories"
+          :key="category"
+          class="segment"
+          :class="{ active: (filter.category || '全部') === category }"
+          type="button"
+          @click="selectCategory(category)"
+        >
           {{ category }}
         </button>
       </div>

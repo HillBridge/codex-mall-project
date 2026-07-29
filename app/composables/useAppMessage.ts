@@ -1,4 +1,10 @@
 type AppMessageType = 'info' | 'success' | 'warning' | 'error'
+type AppMessageActionKind = 'reload' | 'home'
+
+type AppMessageAction = {
+  label: string
+  kind: AppMessageActionKind
+}
 
 type AppMessage = {
   id: string
@@ -6,6 +12,7 @@ type AppMessage = {
   title: string
   description?: string
   traceId?: string
+  action?: AppMessageAction
 }
 
 type NotifyInput = {
@@ -13,6 +20,7 @@ type NotifyInput = {
   title: string
   description?: string
   traceId?: string
+  action?: AppMessageAction
   duration?: number
 }
 
@@ -27,7 +35,8 @@ export function useAppMessage() {
       type: input.type || 'info',
       title: input.title,
       description: input.description,
-      traceId: input.traceId
+      traceId: input.traceId,
+      action: input.action
     }
 
     messages.value = [message, ...messages.value].slice(0, 4)

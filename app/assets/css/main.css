@@ -716,6 +716,29 @@ h2 {
   padding: 40px 0;
 }
 
+.runtime-fallback {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  width: min(760px, calc(100% - 36px));
+  margin: 120px auto;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--red);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.runtime-fallback h1 {
+  font-size: clamp(1.7rem, 4vw, 2.6rem);
+}
+
+.runtime-fallback p {
+  color: var(--muted);
+}
+
 .error-page small {
   margin-top: 12px;
 }
@@ -778,7 +801,17 @@ h2 {
   margin-top: 6px;
 }
 
+.app-message-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .app-message button {
+  cursor: pointer;
+}
+
+.app-message-close {
   display: grid;
   width: 28px;
   height: 28px;
@@ -787,7 +820,18 @@ h2 {
   border-radius: 8px;
   background: transparent;
   color: var(--muted);
-  cursor: pointer;
+}
+
+.app-message-action {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 750;
+  white-space: nowrap;
 }
 
 .app-message button:hover {
@@ -851,6 +895,11 @@ h2 {
   .pending-block,
   .highlight-list {
     grid-template-columns: 1fr;
+  }
+
+  .runtime-fallback {
+    grid-template-columns: 1fr;
+    margin-top: 64px;
   }
 
   .site-footer {

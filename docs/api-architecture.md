@@ -400,6 +400,8 @@ API Client
 页面/UI
   -> app/utils/api-error.ts 转成用户可读文案
   -> app/composables/useApiErrorHandler.ts 统一 toast、401 跳转等行为
+  -> app/components/ui/AppErrorBoundary.vue 捕获客户端组件错误
+  -> app/plugins/client-errors.client.ts 捕获运行时错误和 chunk 加载失败
 ```
 
 ### 错误响应结构
@@ -467,6 +469,46 @@ try {
 
 详情页这种强依赖数据的页面，如果接口返回 404，则进入 404 页面；如果是 backend 不可用或 BFF 上游失败，则进入 502/500 风格错误页，不再误判成“商品不存在”。
 
+### 客户端运行时错误
+
+接口错误只能覆盖“请求失败”，不能覆盖组件渲染异常、第三方库异常、未处理 Promise、静态资源版本不一致等问题。因此项目补了客户端运行时错误治理层。
+
+`app/components/ui/AppErrorBoundary.vue` 包在 `app/app.vue` 的页面根部：
+
+```vue
+<AppErrorBoundary>
+  <NuxtLayout>
+    <NuxtPage />
+  </NuxtLayout>
+</AppErrorBoundary>
+```
+
+它只在客户端捕获子组件运行时错误。捕获后显示模块级降级 UI，提供“重试”和“刷新页面”，避免整个页面直接空白。SSR 阶段不吞错误，仍交给 Nuxt error page 处理。
+
+`app/plugins/client-errors.client.ts` 负责全局捕获：
+
+```txt
+vue:error
+app:error
+window error
+unhandledrejection
+vite:preloadError
+chunk load error
+```
+
+普通运行时错误会通过全局消息提示用户刷新；chunk 加载失败通常发生在发版后旧页面继续请求旧资源，此时提示“页面资源已更新”，并提供“刷新页面”动作。
+
+`app/utils/client-error.ts` 是统一上报入口。当前开发环境会输出到 console；未来接入 Sentry、Datadog、OpenTelemetry、公司内部监控时，只需要在这里或 `window.__NUXT_PILOT_REPORT_ERROR__` 里接入，不需要每个页面单独处理。
+
+全局消息组件 `app/components/ui/AppMessages.vue` 支持：
+
+```txt
+错误/成功/警告/信息
+traceId
+固定展示
+刷新页面/返回首页动作
+```
+
 ### traceId 排查链路
 
 同一个 `traceId` 会贯穿：
@@ -486,6 +528,8 @@ backend access 日志
 - 用户操作请求用 `useApiClient`
 - 用户操作失败用 `useApiErrorHandler`
 - 页面展示错误用 `createApiErrorView`
+- 可恢复的局部模块用 `AppErrorBoundary` 兜底
+- 前端运行时错误统一走 `client-errors.client.ts`
 - 业务代码只写 `/products`、`/auth/me` 这类业务路径
 - 不在页面里直接写 `/api`
 - 不在页面里直接请求真实后端

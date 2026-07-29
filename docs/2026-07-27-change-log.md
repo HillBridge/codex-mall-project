@@ -180,3 +180,39 @@ pnpm start:nuxt
 ```
 
 结果：BFF 或 Koa backend 出错时，前端不会直接暴露内部异常；用户能看到明确提示、重试入口和错误编号，研发可以用同一个 `traceId` 关联浏览器响应、BFF 日志和 backend 日志。
+
+## 9. 补齐客户端运行时错误治理
+
+问题：接口错误治理只能处理 BFF/backend 请求失败，不能覆盖前端组件运行时异常、第三方库异常、未处理 Promise、发版后旧页面加载 chunk 失败等问题。这些问题如果没有兜底，用户可能看到空白页，或者只能看到 Nuxt/Vite 开发错误浮层。
+
+修改：
+
+- 新增 `app/components/ui/AppErrorBoundary.vue`
+  - 客户端捕获子组件运行时错误
+  - 显示模块级降级 UI
+  - 提供“重试”和“刷新页面”
+  - SSR 阶段不吞错误，继续交给 Nuxt 错误页处理
+- 修改 `app/app.vue`
+  - 用 `AppErrorBoundary` 包住 `NuxtLayout + NuxtPage`
+  - `AppMessages` 保持在应用根部，确保跨 layout 生效
+- 新增 `app/plugins/client-errors.client.ts`
+  - 捕获 `vue:error`
+  - 捕获 `app:error`
+  - 捕获 `window error`
+  - 捕获 `unhandledrejection`
+  - 捕获 `vite:preloadError`
+  - 识别 chunk 加载失败并提示用户刷新
+- 新增 `app/utils/client-error.ts`
+  - 统一格式化客户端错误
+  - 统一输出开发日志
+  - 预留 `window.__NUXT_PILOT_REPORT_ERROR__` 上报扩展点
+- 升级 `app/composables/useAppMessage.ts`
+  - 全局消息支持动作按钮
+  - 支持 `reload` 和 `home` 这类安全动作
+- 升级 `app/components/ui/AppMessages.vue`
+  - 支持“刷新页面”等操作按钮
+- 修改 `app/assets/css/main.css`
+  - 增加运行时错误兜底 UI
+  - 增加全局消息动作按钮样式
+
+结果：当前项目除了 API 错误体验外，也具备了前端运行时错误、chunk 加载失败、组件局部崩溃的基础兜底能力。用户不应该直接面对空白页；研发也有统一的前端错误上报入口，后续可以平滑接入 Sentry、Datadog 或内部监控平台。
