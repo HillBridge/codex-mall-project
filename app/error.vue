@@ -34,11 +34,19 @@ const traceId = computed(() => props.error.data?.traceId)
     <p>{{ error.statusMessage || error.message || '请稍后再试，或者回到首页继续浏览。' }}</p>
     <small v-if="traceId">{{ formatTraceId(traceId) }}</small>
     <div class="error-actions">
-      <button class="button primary" type="button" @click="goHome">
+      <button
+        class="button primary"
+        type="button"
+        @click="goHome"
+      >
         <ArrowLeft :size="18" />
         返回首页
       </button>
-      <button class="button ghost" type="button" @click="retry">
+      <button
+        class="button ghost"
+        type="button"
+        @click="retry"
+      >
         <RefreshCcw :size="18" />
         重试
       </button>

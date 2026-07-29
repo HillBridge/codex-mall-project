@@ -17,6 +17,16 @@ pnpm dev
 密码：nuxt-demo
 ```
 
+## 代码质量
+
+多人协作时统一使用项目内置质量命令：
+
+```bash
+pnpm quality
+```
+
+提交代码前会自动执行 Git hook，检查类型、ESLint 和暂存文件格式。更多说明见 [docs/code-quality.md](./docs/code-quality.md)。
+
 ## 目录说明
 
 ```txt

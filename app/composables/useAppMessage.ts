@@ -49,7 +49,7 @@ export function useAppMessage() {
   }
 
   function dismiss(id: string) {
-    messages.value = messages.value.filter(message => message.id !== id)
+    messages.value = messages.value.filter((message) => message.id !== id)
   }
 
   function clear() {

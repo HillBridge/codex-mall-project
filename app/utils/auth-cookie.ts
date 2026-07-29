@@ -12,9 +12,7 @@ export function readCsrfCookie() {
 }
 
 function readBrowserCookie(name: string) {
-  const cookie = document.cookie
-    .split(';')
-    .find(item => item.trim().startsWith(`${name}=`))
+  const cookie = document.cookie.split(';').find((item) => item.trim().startsWith(`${name}=`))
 
   if (!cookie) return ''
 

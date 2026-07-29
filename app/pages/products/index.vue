@@ -97,10 +97,17 @@ async function selectCategory(category: string) {
       <p>这里用同一份接口同时服务 SSR 首屏和客户端筛选，模拟 C 端列表的真实数据链路。</p>
     </section>
 
-    <section class="filter-bar" aria-label="商品筛选">
+    <section
+      class="filter-bar"
+      aria-label="商品筛选"
+    >
       <label class="search-box">
         <Search :size="18" />
-        <input v-model.trim="qDraft" type="search" placeholder="搜索商品、系列或卖点">
+        <input
+          v-model.trim="qDraft"
+          type="search"
+          placeholder="搜索商品、系列或卖点"
+        />
       </label>
       <div class="segment-control">
         <button
@@ -117,15 +124,35 @@ async function selectCategory(category: string) {
     </section>
 
     <PendingBlock v-if="pending && !productList.length" />
-    <section v-else-if="errorView" class="inline-error">
+    <section
+      v-else-if="errorView"
+      class="inline-error"
+    >
       <h2>{{ errorView.title }}</h2>
       <p>{{ errorView.message }}</p>
       <small v-if="errorView.traceId">{{ formatTraceId(errorView.traceId) }}</small>
-      <button class="button primary" type="button" @click="refresh()">重新加载</button>
+      <button
+        class="button primary"
+        type="button"
+        @click="refresh()"
+      >
+        重新加载
+      </button>
     </section>
-    <EmptyState v-else-if="!productList.length" title="没有匹配商品" description="换一个关键词或分类继续找找。" />
-    <section v-else class="product-grid page-grid">
-      <ProductCard v-for="product in productList" :key="product.id" :product="product" />
+    <EmptyState
+      v-else-if="!productList.length"
+      title="没有匹配商品"
+      description="换一个关键词或分类继续找找。"
+    />
+    <section
+      v-else
+      class="product-grid page-grid"
+    >
+      <ProductCard
+        v-for="product in productList"
+        :key="product.id"
+        :product="product"
+      />
     </section>
   </div>
 </template>

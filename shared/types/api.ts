@@ -38,12 +38,11 @@ export type ApiRouteMap = {
 
 export type ApiPath = keyof ApiRouteMap | `/products/${string}`
 
-export type ApiResponseFor<TPath extends string> =
-  TPath extends keyof ApiRouteMap
-    ? ApiRouteMap[TPath]
-    : TPath extends `/products/${string}`
-      ? ProductDetail
-      : unknown
+export type ApiResponseFor<TPath extends string> = TPath extends keyof ApiRouteMap
+  ? ApiRouteMap[TPath]
+  : TPath extends `/products/${string}`
+    ? ProductDetail
+    : unknown
 
 export type ProductListQuery = {
   q?: string

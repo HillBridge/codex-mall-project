@@ -58,8 +58,8 @@ BFF 从当前请求 cookie 中识别用户
 用于用户操作触发的命令式请求，例如登录、登出、提交表单。业务侧只写：
 
 ```ts
-const apiFetch = useApiClient();
-await apiFetch("/auth/me");
+const apiFetch = useApiClient()
+await apiFetch('/auth/me')
 ```
 
 `useApiData`
@@ -150,7 +150,7 @@ SSR 根据 URL query 请求到 家居 数据
 简单页面用：
 
 ```ts
-await useApiData("/products");
+await useApiData('/products')
 ```
 
 只有同时满足这些条件时，才需要 `useQueryDrivenList`：
@@ -262,15 +262,15 @@ wrapper 负责代表谁请求
 错误示意：
 
 ```ts
-let currentCookie = "";
+let currentCookie = ''
 
 const api = $fetch.create({
   onRequest({ options }) {
     options.headers = {
-      cookie: currentCookie,
-    };
-  },
-});
+      cookie: currentCookie
+    }
+  }
+})
 ```
 
 可能发生：
@@ -339,8 +339,8 @@ BFF 层在 SSR 或服务端接口请求真实后端时，是在“代替当前�
 但前端 store 里又执行了：
 
 ```ts
-const loggedInHint = useCookie("nuxt_pilot_logged_in");
-loggedInHint.value = "1";
+const loggedInHint = useCookie('nuxt_pilot_logged_in')
+loggedInHint.value = '1'
 ```
 
 `useCookie()` 如果不传 `maxAge`，前端重新写 cookie 时会把它覆盖成 Session Cookie。Nuxt 默认编码字符串，所以浏览器 里还会看到 `%221%22`，也就是编码后的 `"1"`。

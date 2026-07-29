@@ -13,7 +13,12 @@ usePageSeo({
   description: 'Nuxt 中大型 C 端项目试水样板，覆盖 SSR、BFF、路由缓存、鉴权和模块化实践。'
 })
 
-const { data: products, pending, error, refresh } = await useApiData('/products', {
+const {
+  data: products,
+  pending,
+  error,
+  refresh
+} = await useApiData('/products', {
   query: { featured: true },
   key: 'home-featured-products',
   default: () => []
@@ -38,14 +43,24 @@ const errorView = computed(() => {
           路由级缓存、SEO、状态同步和特性模块拆分都已经在代码里跑通。
         </p>
         <div class="hero-actions">
-          <NuxtLink class="button primary" to="/products">
+          <NuxtLink
+            class="button primary"
+            to="/products"
+          >
             看商品流
             <ArrowRight :size="18" />
           </NuxtLink>
-          <NuxtLink class="button ghost" to="/account/profile">体验鉴权页</NuxtLink>
+          <NuxtLink
+            class="button ghost"
+            to="/account/profile"
+            >体验鉴权页</NuxtLink
+          >
         </div>
       </div>
-      <div class="hero-panel" aria-label="核心能力概览">
+      <div
+        class="hero-panel"
+        aria-label="核心能力概览"
+      >
         <div class="signal-strip">
           <span>SSR</span>
           <span>BFF</span>
@@ -79,14 +94,30 @@ const errorView = computed(() => {
         <h2>服务端首屏商品</h2>
       </div>
       <PendingBlock v-if="pending" />
-      <section v-else-if="errorView" class="inline-error">
+      <section
+        v-else-if="errorView"
+        class="inline-error"
+      >
         <h2>{{ errorView.title }}</h2>
         <p>{{ errorView.message }}</p>
         <small v-if="errorView.traceId">{{ formatTraceId(errorView.traceId) }}</small>
-        <button class="button primary" type="button" @click="refresh()">重新加载</button>
+        <button
+          class="button primary"
+          type="button"
+          @click="refresh()"
+        >
+          重新加载
+        </button>
       </section>
-      <div v-else class="product-grid">
-        <ProductCard v-for="product in featuredProducts" :key="product.id" :product="product" />
+      <div
+        v-else
+        class="product-grid"
+      >
+        <ProductCard
+          v-for="product in featuredProducts"
+          :key="product.id"
+          :product="product"
+        />
       </div>
     </section>
 

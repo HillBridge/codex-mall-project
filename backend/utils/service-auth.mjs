@@ -40,13 +40,7 @@ export function isValidServiceRequest(ctx) {
 }
 
 function createServiceSignature({ secret, serviceId, timestamp, method, path, body }) {
-  const payload = [
-    method.toUpperCase(),
-    path,
-    hashBody(body),
-    timestamp,
-    serviceId
-  ].join('\n')
+  const payload = [method.toUpperCase(), path, hashBody(body), timestamp, serviceId].join('\n')
 
   return createHmac('sha256', secret).update(payload).digest('base64url')
 }
@@ -72,11 +66,19 @@ function getRequiredServiceId() {
 }
 
 function getRequiredServiceToken() {
-  return process.env.BACKEND_SERVICE_TOKEN || process.env.BFF_SERVICE_TOKEN || getLocalDefault(DEFAULT_SERVICE_TOKEN)
+  return (
+    process.env.BACKEND_SERVICE_TOKEN ||
+    process.env.BFF_SERVICE_TOKEN ||
+    getLocalDefault(DEFAULT_SERVICE_TOKEN)
+  )
 }
 
 function getRequiredSignatureSecret() {
-  return process.env.BACKEND_SERVICE_SIGNATURE_SECRET || process.env.BFF_SERVICE_SIGNATURE_SECRET || getLocalDefault(DEFAULT_SERVICE_SIGNATURE_SECRET)
+  return (
+    process.env.BACKEND_SERVICE_SIGNATURE_SECRET ||
+    process.env.BFF_SERVICE_SIGNATURE_SECRET ||
+    getLocalDefault(DEFAULT_SERVICE_SIGNATURE_SECRET)
+  )
 }
 
 function getLocalDefault(value) {

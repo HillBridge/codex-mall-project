@@ -35,7 +35,9 @@ async function submit() {
 
   try {
     await session.login(parsed.data)
-    await navigateTo(typeof route.query.redirect === 'string' ? route.query.redirect : '/account/profile')
+    await navigateTo(
+      typeof route.query.redirect === 'string' ? route.query.redirect : '/account/profile'
+    )
   } catch (error) {
     const view = await handleApiError(error, {
       fallbackMessage: '登录失败，请检查账号或密码。'
@@ -52,17 +54,37 @@ async function submit() {
       <h1>服务端 Cookie 登录</h1>
       <p>默认演示账号已经填好，用它可以进入受保护的账户页。</p>
     </div>
-    <form class="auth-form" @submit.prevent="submit">
+    <form
+      class="auth-form"
+      @submit.prevent="submit"
+    >
       <label>
         <span>邮箱</span>
-        <input v-model="form.email" autocomplete="email" type="email">
+        <input
+          v-model="form.email"
+          autocomplete="email"
+          type="email"
+        />
       </label>
       <label>
         <span>密码</span>
-        <input v-model="form.password" autocomplete="current-password" type="password">
+        <input
+          v-model="form.password"
+          autocomplete="current-password"
+          type="password"
+        />
       </label>
-      <p v-if="message" class="form-error">{{ message }}</p>
-      <button class="button primary" type="submit" :disabled="session.pending">
+      <p
+        v-if="message"
+        class="form-error"
+      >
+        {{ message }}
+      </p>
+      <button
+        class="button primary"
+        type="submit"
+        :disabled="session.pending"
+      >
         <LogIn :size="18" />
         {{ session.pending ? '登录中' : '登录' }}
       </button>

@@ -22,7 +22,10 @@ const session = useSessionStore()
       <p>这个页面会先在服务端判断登录态，再把会话状态交给客户端继续使用。</p>
     </div>
 
-    <div v-if="session.user" class="profile-grid">
+    <div
+      v-if="session.user"
+      class="profile-grid"
+    >
       <section class="profile-summary">
         <span class="avatar">{{ session.user.name.slice(0, 1) }}</span>
         <div>

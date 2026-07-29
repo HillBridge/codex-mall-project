@@ -12,14 +12,7 @@ import type { ApiErrorCode, ApiFailure } from '~~/shared/types/api'
 import { getTraceId, throwApiError } from './api-response'
 import { logger } from './logger'
 
-type HttpMethod =
-  | 'GET'
-  | 'POST'
-  | 'PUT'
-  | 'PATCH'
-  | 'DELETE'
-  | 'HEAD'
-  | 'OPTIONS'
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS'
 
 type UpstreamOptions = {
   method?: HttpMethod
@@ -106,7 +99,14 @@ async function fetchUpstream(
 
       const response = await fetch(requestURL, {
         method,
-        headers: createUpstreamHeaders(event, options.headers, method, requestURL, requestBody, serviceAuth),
+        headers: createUpstreamHeaders(
+          event,
+          options.headers,
+          method,
+          requestURL,
+          requestBody,
+          serviceAuth
+        ),
         body: requestBody,
         signal: controller.signal
       })
@@ -147,7 +147,7 @@ function createUpstreamURL(baseURL: string, path: string, query?: Record<string,
     if (value === undefined || value === null || value === '') return
 
     if (Array.isArray(value)) {
-      value.forEach(item => url.searchParams.append(key, String(item)))
+      value.forEach((item) => url.searchParams.append(key, String(item)))
       return
     }
 
@@ -175,7 +175,10 @@ function createUpstreamHeaders(
   headers.delete('cookie')
   headers.set('x-request-id', getTraceId(event))
   headers.set('x-forwarded-host', getHeader(event, 'host') || requestURL.host)
-  headers.set('x-forwarded-proto', getHeader(event, 'x-forwarded-proto') || requestURL.protocol.replace(':', ''))
+  headers.set(
+    'x-forwarded-proto',
+    getHeader(event, 'x-forwarded-proto') || requestURL.protocol.replace(':', '')
+  )
   copyHeader(event, headers, CSRF_HEADER_NAME)
 
   if (body !== undefined && !headers.has('content-type')) {
@@ -237,10 +240,19 @@ function createUpstreamBody(body: unknown): string | undefined {
   return JSON.stringify(body)
 }
 
-function createServiceAuthConfig(event: H3Event, config: ReturnType<typeof useRuntimeConfig>): ServiceAuthConfig {
+function createServiceAuthConfig(
+  event: H3Event,
+  config: ReturnType<typeof useRuntimeConfig>
+): ServiceAuthConfig {
   const serviceId = config.upstreamServiceId || process.env.BFF_SERVICE_ID || 'nuxt-bff'
-  const serviceToken = config.upstreamServiceToken || process.env.BFF_SERVICE_TOKEN || getLocalDefault(DEFAULT_SERVICE_TOKEN)
-  const signatureSecret = config.upstreamServiceSignatureSecret || process.env.BFF_SERVICE_SIGNATURE_SECRET || getLocalDefault(DEFAULT_SERVICE_SIGNATURE_SECRET)
+  const serviceToken =
+    config.upstreamServiceToken ||
+    process.env.BFF_SERVICE_TOKEN ||
+    getLocalDefault(DEFAULT_SERVICE_TOKEN)
+  const signatureSecret =
+    config.upstreamServiceSignatureSecret ||
+    process.env.BFF_SERVICE_SIGNATURE_SECRET ||
+    getLocalDefault(DEFAULT_SERVICE_SIGNATURE_SECRET)
 
   if (!serviceToken || !signatureSecret) {
     throwApiError(event, {
@@ -272,13 +284,7 @@ function createServiceSignature({
   path: string
   body: string
 }) {
-  const payload = [
-    method.toUpperCase(),
-    path,
-    hashBody(body),
-    timestamp,
-    serviceId
-  ].join('\n')
+  const payload = [method.toUpperCase(), path, hashBody(body), timestamp, serviceId].join('\n')
 
   return createHmac('sha256', secret).update(payload).digest('base64url')
 }
@@ -308,7 +314,7 @@ function forwardSetCookieHeaders(event: H3Event, headers: Headers) {
   const directSetCookieHeaders = readableHeaders.getSetCookie?.() || []
   const fallbackSetCookieHeader = headers.get('set-cookie')
   const setCookieHeaders = directSetCookieHeaders.length
-    ? directSetCookieHeaders.flatMap(cookie => splitCookiesString(cookie))
+    ? directSetCookieHeaders.flatMap((cookie) => splitCookiesString(cookie))
     : fallbackSetCookieHeader
       ? splitCookiesString(fallbackSetCookieHeader)
       : []

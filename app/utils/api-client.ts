@@ -1,16 +1,15 @@
 import { $fetch } from 'ofetch'
 import { readCsrfCookie } from '~/utils/auth-cookie'
 import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from '~~/shared/constants/auth'
-import type { ApiClientError, ApiErrorCode, ApiFailure, ApiResponseFor, ApiSuccess } from '~~/shared/types/api'
+import type {
+  ApiClientError,
+  ApiErrorCode,
+  ApiFailure,
+  ApiResponseFor,
+  ApiSuccess
+} from '~~/shared/types/api'
 
-type HttpMethod =
-  | 'GET'
-  | 'POST'
-  | 'PUT'
-  | 'PATCH'
-  | 'DELETE'
-  | 'HEAD'
-  | 'OPTIONS'
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS'
 
 export type ApiClientOptions = {
   method?: HttpMethod
@@ -32,15 +31,21 @@ type CreateApiClientOptions = {
   fetcher?: ApiClientFetcher
 }
 
-export type ApiClientFetcher = <T>(request: string, opts?: ApiClientOptions & {
-  baseURL?: string
-  retry?: number
-  credentials?: RequestCredentials
-}) => Promise<T>
+export type ApiClientFetcher = <T>(
+  request: string,
+  opts?: ApiClientOptions & {
+    baseURL?: string
+    retry?: number
+    credentials?: RequestCredentials
+  }
+) => Promise<T>
 
-type BaseApiFetch = <T>(request: string, opts?: ApiClientOptions & {
-  credentials?: RequestCredentials
-}) => Promise<T>
+type BaseApiFetch = <T>(
+  request: string,
+  opts?: ApiClientOptions & {
+    credentials?: RequestCredentials
+  }
+) => Promise<T>
 
 const baseFetchCache = new Map<string, BaseApiFetch>()
 
@@ -51,15 +56,16 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     path: TPath,
     requestOptions: ApiClientOptions = {}
   ): Promise<ApiResponseFor<TPath>> {
-    const headers = createRequestHeaders(requestOptions.headers, options.forwardedHeaders, requestOptions.method)
-    const response = await client<ApiSuccess<ApiResponseFor<TPath>>>(
-      normalizeApiPath(path),
-      {
-        ...requestOptions,
-        credentials: 'include',
-        headers
-      }
+    const headers = createRequestHeaders(
+      requestOptions.headers,
+      options.forwardedHeaders,
+      requestOptions.method
     )
+    const response = await client<ApiSuccess<ApiResponseFor<TPath>>>(normalizeApiPath(path), {
+      ...requestOptions,
+      credentials: 'include',
+      headers
+    })
 
     return response.data
   }
@@ -129,24 +135,29 @@ function readCsrfToken(cookieHeader: string) {
 }
 
 function readCookieValue(cookieHeader: string, name: string) {
-  return cookieHeader
-    .split(';')
-    .map(item => item.trim())
-    .find(item => item.startsWith(`${name}=`))
-    ?.split('=')
-    .slice(1)
-    .join('=') || ''
+  return (
+    cookieHeader
+      .split(';')
+      .map((item) => item.trim())
+      .find((item) => item.startsWith(`${name}=`))
+      ?.split('=')
+      .slice(1)
+      .join('=') || ''
+  )
 }
 
 function normalizeApiPath(path: string) {
-  return path
-    .replace(/^\/api(?=\/|$)/, '')
-    .replace(/^\/+/, '')
+  return path.replace(/^\/api(?=\/|$)/, '').replace(/^\/+/, '')
 }
 
-function normalizeApiError(statusCode: number, payload?: { message?: string, statusMessage?: string, data?: ApiFailure } | ApiFailure) {
+function normalizeApiError(
+  statusCode: number,
+  payload?: { message?: string; statusMessage?: string; data?: ApiFailure } | ApiFailure
+) {
   const body = readApiFailure(payload)
-  const error = new Error(body?.message || readPayloadMessage(payload) || '请求失败') as ApiClientError
+  const error = new Error(
+    body?.message || readPayloadMessage(payload) || '请求失败'
+  ) as ApiClientError
 
   error.statusCode = statusCode
   error.code = body?.code || statusToCode(statusCode)
@@ -158,24 +169,38 @@ function normalizeApiError(statusCode: number, payload?: { message?: string, sta
 
 function normalizeFetchError(error: unknown) {
   if (error && typeof error === 'object' && 'response' in error) {
-    const response = (error as { response?: { status: number, _data?: { message?: string, statusMessage?: string, data?: ApiFailure } | ApiFailure } }).response
+    const response = (
+      error as {
+        response?: {
+          status: number
+          _data?: { message?: string; statusMessage?: string; data?: ApiFailure } | ApiFailure
+        }
+      }
+    ).response
     if (response) {
       return normalizeApiError(response.status, response._data)
     }
   }
 
-  if (error && typeof error === 'object' && ('data' in error || 'statusCode' in error || 'status' in error)) {
+  if (
+    error &&
+    typeof error === 'object' &&
+    ('data' in error || 'statusCode' in error || 'status' in error)
+  ) {
     const fetchError = error as {
       statusCode?: number
       status?: number
-      data?: { message?: string, statusMessage?: string, data?: ApiFailure } | ApiFailure
+      data?: { message?: string; statusMessage?: string; data?: ApiFailure } | ApiFailure
       message?: string
       statusMessage?: string
     }
-    return normalizeApiError(fetchError.statusCode || fetchError.status || 500, fetchError.data || {
-      message: fetchError.message,
-      statusMessage: fetchError.statusMessage
-    })
+    return normalizeApiError(
+      fetchError.statusCode || fetchError.status || 500,
+      fetchError.data || {
+        message: fetchError.message,
+        statusMessage: fetchError.statusMessage
+      }
+    )
   }
 
   return error
@@ -187,7 +212,7 @@ function readApiFailure(payload?: { data?: ApiFailure } | ApiFailure) {
   return payload.data
 }
 
-function readPayloadMessage(payload?: { message?: string, statusMessage?: string } | ApiFailure) {
+function readPayloadMessage(payload?: { message?: string; statusMessage?: string } | ApiFailure) {
   if (!payload) return ''
   if ('statusMessage' in payload && payload.statusMessage) return payload.statusMessage
   return payload.message || ''

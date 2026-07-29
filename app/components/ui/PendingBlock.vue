@@ -1,5 +1,8 @@
 <template>
-  <div class="pending-block" aria-live="polite">
+  <div
+    class="pending-block"
+    aria-live="polite"
+  >
     <span />
     <span />
     <span />

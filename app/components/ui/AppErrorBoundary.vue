@@ -29,16 +29,28 @@ function reload() {
 
 <template>
   <slot v-if="!hasError" />
-  <section v-else class="runtime-fallback" role="alert">
+  <section
+    v-else
+    class="runtime-fallback"
+    role="alert"
+  >
     <AlertTriangle :size="28" />
     <div>
       <h1>页面暂时不可用</h1>
       <p>当前模块运行异常，可以重试或刷新页面继续访问。</p>
       <div class="error-actions">
-        <button class="button primary" type="button" @click="reset">
+        <button
+          class="button primary"
+          type="button"
+          @click="reset"
+        >
           重试
         </button>
-        <button class="button ghost" type="button" @click="reload">
+        <button
+          class="button ghost"
+          type="button"
+          @click="reload"
+        >
           <RefreshCcw :size="18" />
           刷新页面
         </button>

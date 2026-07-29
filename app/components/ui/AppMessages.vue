@@ -30,14 +30,22 @@ async function runAction(message: (typeof messages.value)[number]) {
 
 <template>
   <Teleport to="body">
-    <div v-if="visibleMessages.length" class="app-messages" aria-live="polite" aria-atomic="false">
+    <div
+      v-if="visibleMessages.length"
+      class="app-messages"
+      aria-live="polite"
+      aria-atomic="false"
+    >
       <section
         v-for="message in visibleMessages"
         :key="message.id"
         class="app-message"
         :class="`app-message-${message.type}`"
       >
-        <component :is="icons[message.type]" :size="20" />
+        <component
+          :is="icons[message.type]"
+          :size="20"
+        />
         <div>
           <strong>{{ message.title }}</strong>
           <p v-if="message.description">{{ message.description }}</p>
@@ -52,7 +60,12 @@ async function runAction(message: (typeof messages.value)[number]) {
           >
             {{ message.action.label }}
           </button>
-          <button class="app-message-close" type="button" aria-label="关闭提示" @click="dismiss(message.id)">
+          <button
+            class="app-message-close"
+            type="button"
+            aria-label="关闭提示"
+            @click="dismiss(message.id)"
+          >
             <X :size="16" />
           </button>
         </div>

@@ -8,7 +8,10 @@ export type ApiErrorView = {
   code?: ApiErrorCode
 }
 
-export function createApiErrorView(error: unknown, fallbackMessage = '请求失败，请稍后重试。'): ApiErrorView {
+export function createApiErrorView(
+  error: unknown,
+  fallbackMessage = '请求失败，请稍后重试。'
+): ApiErrorView {
   const apiError = normalizeApiError(error)
 
   if (!apiError) {
@@ -90,12 +93,7 @@ export function serializeApiError(error: unknown) {
 }
 
 export function isApiClientError(error: unknown): error is ApiClientError {
-  return Boolean(
-    error &&
-    typeof error === 'object' &&
-    'statusCode' in error &&
-    'code' in error
-  )
+  return Boolean(error && typeof error === 'object' && 'statusCode' in error && 'code' in error)
 }
 
 function normalizeApiError(error: unknown): ApiClientError | null {
@@ -130,10 +128,7 @@ function normalizeApiError(error: unknown): ApiClientError | null {
   if (!candidate.statusCode && !candidate.status && !code) return null
 
   const normalized = new Error(
-    payload?.message ||
-    candidate.message ||
-    candidate.statusMessage ||
-    '请求失败'
+    payload?.message || candidate.message || candidate.statusMessage || '请求失败'
   ) as ApiClientError
 
   normalized.statusCode = candidate.statusCode || candidate.status || 500

@@ -4,7 +4,12 @@ import bodyParser from 'koa-bodyparser'
 import { z } from 'zod'
 import { demoUser, toUserProfile } from './data/users.mjs'
 import { products, toProductSummary } from './data/products.mjs'
-import { clearSession, createSession, getSessionUser, isValidCsrfRequest } from './services/session-service.mjs'
+import {
+  clearSession,
+  createSession,
+  getSessionUser,
+  isValidCsrfRequest
+} from './services/session-service.mjs'
 import { createHttpError } from './utils/http-error.mjs'
 import { logger } from './utils/logger.mjs'
 import { isValidServiceRequest } from './utils/service-auth.mjs'
@@ -20,11 +25,13 @@ const loginSchema = z.object({
 const productQuerySchema = z.object({
   q: z.string().optional(),
   category: z.string().optional(),
-  featured: z.preprocess((value) => {
-    if (value === true || value === 'true') return true
-    if (value === false || value === 'false' || value === '' || value == null) return false
-    return value
-  }, z.boolean()).optional()
+  featured: z
+    .preprocess((value) => {
+      if (value === true || value === 'true') return true
+      if (value === false || value === 'false' || value === '' || value == null) return false
+      return value
+    }, z.boolean())
+    .optional()
 })
 
 export function createBackendApp() {
@@ -77,7 +84,11 @@ export function createBackendApp() {
   })
 
   app.use(async (ctx, next) => {
-    if (unsafeMethods.has(ctx.method.toUpperCase()) && ctx.path !== '/auth/login' && !isValidCsrfRequest(ctx)) {
+    if (
+      unsafeMethods.has(ctx.method.toUpperCase()) &&
+      ctx.path !== '/auth/login' &&
+      !isValidCsrfRequest(ctx)
+    ) {
       throw createHttpError(403, 'FORBIDDEN', 'CSRF 校验失败')
     }
 
@@ -148,7 +159,7 @@ export function createBackendApp() {
   })
 
   router.get('/products/:slug', (ctx) => {
-    const product = products.find(item => item.slug === ctx.params.slug)
+    const product = products.find((item) => item.slug === ctx.params.slug)
 
     if (!product) {
       throw createHttpError(404, 'NOT_FOUND', '商品不存在')

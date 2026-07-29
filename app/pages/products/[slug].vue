@@ -13,10 +13,11 @@ const { data: product, error } = await useApiData(`/products/${slug}` as `/produ
 })
 const currentProduct = computed(() => product.value as ProductDetail | null)
 
-
 if (error.value) {
   const view = createApiErrorView(error.value, '商品详情加载失败，请稍后重试。')
-  const requestTraceId = import.meta.server ? String(useRequestEvent()?.context.requestId || '') : ''
+  const requestTraceId = import.meta.server
+    ? String(useRequestEvent()?.context.requestId || '')
+    : ''
   throw createError({
     statusCode: view.statusCode || 500,
     message: view.message,
@@ -42,15 +43,24 @@ usePageSeo({
 </script>
 
 <template>
-  <article v-if="currentProduct" class="product-detail">
-    <NuxtLink class="back-link" to="/products">
+  <article
+    v-if="currentProduct"
+    class="product-detail"
+  >
+    <NuxtLink
+      class="back-link"
+      to="/products"
+    >
       <ArrowLeft :size="18" />
       返回商品
     </NuxtLink>
 
     <div class="detail-layout">
       <div class="detail-media">
-        <img :src="currentProduct.image" :alt="currentProduct.name">
+        <img
+          :src="currentProduct.image"
+          :alt="currentProduct.name"
+        />
       </div>
       <section class="detail-copy">
         <p class="eyebrow">{{ currentProduct.category }} / {{ currentProduct.series }}</p>
@@ -60,7 +70,10 @@ usePageSeo({
           <strong>¥{{ currentProduct.price.toLocaleString('zh-CN') }}</strong>
           <span>库存 {{ currentProduct.stock }} 件</span>
         </div>
-        <button class="button primary" type="button">
+        <button
+          class="button primary"
+          type="button"
+        >
           <ShoppingBag :size="18" />
           加入购物袋
         </button>
@@ -73,7 +86,12 @@ usePageSeo({
         <h2>核心卖点</h2>
       </div>
       <ul class="highlight-list">
-        <li v-for="highlight in currentProduct.highlights" :key="highlight">{{ highlight }}</li>
+        <li
+          v-for="highlight in currentProduct.highlights"
+          :key="highlight"
+        >
+          {{ highlight }}
+        </li>
       </ul>
     </section>
   </article>

@@ -26,6 +26,7 @@ export type ClientErrorReport = {
 
 export function reportClientError(error: unknown, context: ClientErrorContext) {
   const normalized = normalizeClientError(error)
+
   const report: ClientErrorReport = {
     source: context.source,
     name: normalized.name,
@@ -43,9 +44,11 @@ export function reportClientError(error: unknown, context: ClientErrorContext) {
   }
 
   const reporter = import.meta.client
-    ? (window as Window & {
-        __NUXT_PILOT_REPORT_ERROR__?: (report: ClientErrorReport) => void
-      }).__NUXT_PILOT_REPORT_ERROR__
+    ? (
+        window as Window & {
+          __NUXT_PILOT_REPORT_ERROR__?: (report: ClientErrorReport) => void
+        }
+      ).__NUXT_PILOT_REPORT_ERROR__
     : undefined
 
   reporter?.(report)
@@ -63,7 +66,7 @@ export function isChunkLoadError(error: unknown) {
     'Loading chunk',
     'ChunkLoadError',
     'CSS chunk'
-  ].some(pattern => message.includes(pattern))
+  ].some((pattern) => message.includes(pattern))
 }
 
 export function normalizeClientError(error: unknown) {

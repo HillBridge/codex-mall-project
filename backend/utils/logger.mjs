@@ -55,16 +55,22 @@ function writePrettyLog(level, payload) {
     formatPrettyPrimaryField('time', payload.time),
     formatPrettyPrimaryField('level', String(level).toUpperCase()),
     formatPrettyPrimaryField('scope', payload.scope)
-  ].filter(Boolean).join(' ')
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   const details = [
     formatPrettyField('method', payload.method),
     formatPrettyField('path', payload.path),
     formatPrettyField('status', payload.statusCode),
-    payload.durationMs !== undefined ? formatPrettyField('duration', `${String(payload.durationMs)}ms`) : '',
+    payload.durationMs !== undefined
+      ? formatPrettyField('duration', `${String(payload.durationMs)}ms`)
+      : '',
     formatPrettyField('traceId', payload.traceId),
     formatPrettyField('code', payload.errorCode)
-  ].filter(Boolean).join(' | ')
+  ]
+    .filter(Boolean)
+    .join(' | ')
   const message = [primary, details].filter(Boolean).join(' | ')
 
   if (level === 'error') console.error(message)
