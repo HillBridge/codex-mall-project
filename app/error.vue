@@ -21,7 +21,9 @@ const title = computed(() => {
 })
 
 const goHome = () => clearError({ redirect: '/' })
-const retry = () => clearError()
+const retry = () => {
+  window.location.reload()
+}
 const traceId = computed(() => props.error.data?.traceId)
 </script>
 
