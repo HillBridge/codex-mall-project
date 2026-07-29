@@ -144,9 +144,9 @@ function normalizeApiPath(path: string) {
     .replace(/^\/+/, '')
 }
 
-function normalizeApiError(statusCode: number, payload?: { message?: string, statusMessage?: string, data?: ApiFailure }) {
-  const body = payload?.data
-  const error = new Error(body?.message || payload?.message || payload?.statusMessage || '请求失败') as ApiClientError
+function normalizeApiError(statusCode: number, payload?: { message?: string, statusMessage?: string, data?: ApiFailure } | ApiFailure) {
+  const body = readApiFailure(payload)
+  const error = new Error(body?.message || readPayloadMessage(payload) || '请求失败') as ApiClientError
 
   error.statusCode = statusCode
   error.code = body?.code || statusToCode(statusCode)
@@ -158,13 +158,39 @@ function normalizeApiError(statusCode: number, payload?: { message?: string, sta
 
 function normalizeFetchError(error: unknown) {
   if (error && typeof error === 'object' && 'response' in error) {
-    const response = (error as { response?: { status: number, _data?: { message?: string, statusMessage?: string, data?: ApiFailure } } }).response
+    const response = (error as { response?: { status: number, _data?: { message?: string, statusMessage?: string, data?: ApiFailure } | ApiFailure } }).response
     if (response) {
       return normalizeApiError(response.status, response._data)
     }
   }
 
+  if (error && typeof error === 'object' && ('data' in error || 'statusCode' in error || 'status' in error)) {
+    const fetchError = error as {
+      statusCode?: number
+      status?: number
+      data?: { message?: string, statusMessage?: string, data?: ApiFailure } | ApiFailure
+      message?: string
+      statusMessage?: string
+    }
+    return normalizeApiError(fetchError.statusCode || fetchError.status || 500, fetchError.data || {
+      message: fetchError.message,
+      statusMessage: fetchError.statusMessage
+    })
+  }
+
   return error
+}
+
+function readApiFailure(payload?: { data?: ApiFailure } | ApiFailure) {
+  if (!payload) return undefined
+  if ('code' in payload) return payload
+  return payload.data
+}
+
+function readPayloadMessage(payload?: { message?: string, statusMessage?: string } | ApiFailure) {
+  if (!payload) return ''
+  if ('statusMessage' in payload && payload.statusMessage) return payload.statusMessage
+  return payload.message || ''
 }
 
 function statusToCode(statusCode: number): ApiErrorCode {

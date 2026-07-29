@@ -6,6 +6,7 @@ import PendingBlock from '~/components/ui/PendingBlock.vue'
 import { usePageSeo } from '~/composables/usePageSeo'
 import ProductCard from '~/features/products/components/ProductCard.vue'
 import { useProductCatalog } from '~/features/products/composables/useProductCatalog'
+import { createApiErrorView, formatTraceId } from '~/utils/api-error'
 import type { ProductFilter } from '~/features/products/types'
 import type { ProductSummary } from '~~/shared/types/product'
 
@@ -24,6 +25,13 @@ const qDraft = ref(filter.value.q || '')
 
 const { data: products, pending, error, refresh } = await useProductCatalog(filter)
 const productList = computed(() => (products.value || []) as ProductSummary[])
+const requestTraceId = import.meta.server ? String(useRequestEvent()?.context.requestId || '') : ''
+const errorView = computed(() => {
+  console.log('error', error.value)
+  if (!error.value) return null
+  const view = createApiErrorView(error.value, '商品数据加载失败，请稍后重试。')
+  return view.traceId || !requestTraceId ? view : { ...view, traceId: requestTraceId }
+})
 
 const categories = ['全部', '家居', '户外', '数码', '穿搭']
 
@@ -96,29 +104,21 @@ async function selectCategory(category: string) {
         <input v-model.trim="qDraft" type="search" placeholder="搜索商品、系列或卖点">
       </label>
       <div class="segment-control">
-        <button
-          v-for="category in categories"
-          :key="category"
-          class="segment"
-          :class="{ active: (filter.category || '全部') === category }"
-          type="button"
-          @click="selectCategory(category)"
-        >
+        <button v-for="category in categories" :key="category" class="segment"
+          :class="{ active: (filter.category || '全部') === category }" type="button" @click="selectCategory(category)">
           {{ category }}
         </button>
       </div>
     </section>
 
     <PendingBlock v-if="pending && !productList.length" />
-    <section v-else-if="error" class="inline-error">
-      <p>商品数据加载失败。</p>
+    <section v-else-if="errorView" class="inline-error">
+      <h2>{{ errorView.title }}</h2>
+      <p>{{ errorView.message }}</p>
+      <small v-if="errorView.traceId">{{ formatTraceId(errorView.traceId) }}</small>
       <button class="button primary" type="button" @click="refresh()">重新加载</button>
     </section>
-    <EmptyState
-      v-else-if="!productList.length"
-      title="没有匹配商品"
-      description="换一个关键词或分类继续找找。"
-    />
+    <EmptyState v-else-if="!productList.length" title="没有匹配商品" description="换一个关键词或分类继续找找。" />
     <section v-else class="product-grid page-grid">
       <ProductCard v-for="product in productList" :key="product.id" :product="product" />
     </section>

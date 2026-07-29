@@ -382,10 +382,110 @@ NUXT_UPSTREAM_SERVICE_SIGNATURE_SECRET=<strong-random-secret>
 
 本地开发没有显式配置时会使用本地默认值；生产环境没有配置 token 或签名密钥时，BFF 会拒绝调用上游，backend 也会拒绝非 health 的业务接口。
 
-## 6. 团队使用约定
+## 6. 错误处理与用户体验
+
+当前项目把错误处理分成四层，不让用户直接面对后端原始异常，也不让页面到处手写不同的错误文案。
+
+```txt
+Koa backend
+  -> backend/app.mjs 统一输出 code/message/traceId
+
+Nuxt BFF
+  -> server/utils/api-response.ts 统一输出 code/message/traceId
+  -> server/utils/upstream.ts 把 backend 错误转成 BFF 标准错误
+
+API Client
+  -> app/utils/api-client.ts 转成 ApiClientError
+
+页面/UI
+  -> app/utils/api-error.ts 转成用户可读文案
+  -> app/composables/useApiErrorHandler.ts 统一 toast、401 跳转等行为
+```
+
+### 错误响应结构
+
+BFF 返回给前端的错误结构保持稳定：
+
+```ts
+{
+  code: 'UPSTREAM_ERROR',
+  message: '上游服务不可用',
+  traceId: '8066b346-7fe3-4ef8-bc8b-5e3bdc047f83'
+}
+```
+
+开发环境可以带 `details` 辅助调试；生产环境不向浏览器暴露 `details`，避免把异常对象、内部服务地址、签名校验细节、token/cookie 等敏感信息泄露给用户。
+
+### 前端错误分类
+
+`app/utils/api-error.ts` 把技术错误码翻译成用户能理解的视图模型：
+
+```txt
+401 / UNAUTHORIZED      需要重新登录
+403 / FORBIDDEN         请求被安全策略拦截
+404 / NOT_FOUND         内容不存在或已下架
+422 / VALIDATION_ERROR  表单内容需要调整
+502 / UPSTREAM_ERROR    后端服务暂时不可用
+500 / INTERNAL_ERROR    页面暂时不可用
+```
+
+页面不要直接拼接后端错误，而是使用：
+
+```ts
+const view = createApiErrorView(error, '请求失败，请稍后重试。')
+```
+
+### 操作型错误
+
+登录、退出、提交表单、收藏、加入购物袋这类用户操作，通过 `useApiErrorHandler()` 统一处理：
+
+```ts
+const { handleApiError } = useApiErrorHandler()
+
+try {
+  await submit()
+} catch (error) {
+  await handleApiError(error, {
+    fallbackMessage: '操作失败，请稍后重试。',
+    redirectOnUnauthorized: true
+  })
+}
+```
+
+它会调用全局消息组件 `app/components/ui/AppMessages.vue`，展示用户可读提示和 `traceId`。用户反馈问题时，可以把错误编号给研发或客服。
+
+### 页面型错误
+
+列表页、首页推荐位这类区域级请求失败时，不整页崩溃，而是显示局部错误块：
+
+```txt
+标题
+说明
+错误编号
+重新加载按钮
+```
+
+详情页这种强依赖数据的页面，如果接口返回 404，则进入 404 页面；如果是 backend 不可用或 BFF 上游失败，则进入 502/500 风格错误页，不再误判成“商品不存在”。
+
+### traceId 排查链路
+
+同一个 `traceId` 会贯穿：
+
+```txt
+浏览器响应
+BFF access 日志
+BFF upstream 日志
+backend access 日志
+```
+
+排查问题时先拿用户看到的错误编号，再查 BFF 和 backend 日志即可。
+
+## 7. 团队使用约定
 
 - 页面 SSR 数据用 `useApiData`
 - 用户操作请求用 `useApiClient`
+- 用户操作失败用 `useApiErrorHandler`
+- 页面展示错误用 `createApiErrorView`
 - 业务代码只写 `/products`、`/auth/me` 这类业务路径
 - 不在页面里直接写 `/api`
 - 不在页面里直接请求真实后端

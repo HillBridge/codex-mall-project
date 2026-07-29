@@ -5,6 +5,7 @@ import PendingBlock from '~/components/ui/PendingBlock.vue'
 import { useApiData } from '~/composables/useApiData'
 import { usePageSeo } from '~/composables/usePageSeo'
 import ProductCard from '~/features/products/components/ProductCard.vue'
+import { createApiErrorView, formatTraceId } from '~/utils/api-error'
 import type { ProductSummary } from '~~/shared/types/product'
 
 usePageSeo({
@@ -18,6 +19,12 @@ const { data: products, pending, error, refresh } = await useApiData('/products'
   default: () => []
 })
 const featuredProducts = computed(() => (products.value || []) as ProductSummary[])
+const requestTraceId = import.meta.server ? String(useRequestEvent()?.context.requestId || '') : ''
+const errorView = computed(() => {
+  if (!error.value) return null
+  const view = createApiErrorView(error.value, '推荐商品加载失败，请稍后重试。')
+  return view.traceId || !requestTraceId ? view : { ...view, traceId: requestTraceId }
+})
 </script>
 
 <template>
@@ -72,8 +79,10 @@ const featuredProducts = computed(() => (products.value || []) as ProductSummary
         <h2>服务端首屏商品</h2>
       </div>
       <PendingBlock v-if="pending" />
-      <section v-else-if="error" class="inline-error">
-        <p>推荐商品加载失败。</p>
+      <section v-else-if="errorView" class="inline-error">
+        <h2>{{ errorView.title }}</h2>
+        <p>{{ errorView.message }}</p>
+        <small v-if="errorView.traceId">{{ formatTraceId(errorView.traceId) }}</small>
         <button class="button primary" type="button" @click="refresh()">重新加载</button>
       </section>
       <div v-else class="product-grid">

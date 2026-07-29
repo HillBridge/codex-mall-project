@@ -3,14 +3,29 @@ import { ArrowLeft, ShoppingBag } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { useApiData } from '~/composables/useApiData'
 import { usePageSeo } from '~/composables/usePageSeo'
+import { createApiErrorView } from '~/utils/api-error'
 import type { ProductDetail } from '~~/shared/types/product'
 
 const route = useRoute()
 const slug = Array.isArray(route.params.slug) ? route.params.slug[0] : String(route.params.slug)
-const { data: product } = await useApiData(`/products/${slug}` as `/products/${string}`, {
+const { data: product, error } = await useApiData(`/products/${slug}` as `/products/${string}`, {
   key: `product:${slug}`
 })
 const currentProduct = computed(() => product.value as ProductDetail | null)
+
+
+if (error.value) {
+  const view = createApiErrorView(error.value, '商品详情加载失败，请稍后重试。')
+  const requestTraceId = import.meta.server ? String(useRequestEvent()?.context.requestId || '') : ''
+  throw createError({
+    statusCode: view.statusCode || 500,
+    message: view.message,
+    data: {
+      traceId: view.traceId || requestTraceId || undefined,
+      code: view.code
+    }
+  })
+}
 
 if (!currentProduct.value) {
   throw createError({

@@ -76,3 +76,107 @@
   - `app/pages/products/index.vue`
 
 结果：features 模块内组件来源更清晰，页面依赖关系更显式。
+
+## 7. BFF 和 Backend 增加请求日志
+
+问题：本地重启服务并重新登录后，控制台只能看到启动信息，看不到登录、接口转发、后端处理这些请求链路日志。
+
+根因：此前只在启动命令里加入了 `LOG_LEVEL`、`LOG_FORMAT` 等环境变量，但项目里还没有真正实现 logger，也没有在 BFF 和 Koa backend 的请求入口处打印访问日志。
+
+修改：
+
+- 新增 `server/utils/logger.ts`，作为 Nuxt BFF 侧日志工具
+- 新增 `backend/utils/logger.mjs`，作为 Koa backend 侧日志工具
+- 新增 `server/middleware/03-access-log.ts`，记录浏览器进入 BFF 的请求日志
+- 修改 `server/utils/upstream.ts`，记录 BFF 调用真实 backend 的 upstream 日志
+- 修改 `backend/app.mjs`，记录真实 backend 收到的请求日志
+- 修改 `package.json`，增加本地和生产日志启动命令
+- `.gitignore` 增加 `logs/`，避免本地日志文件进入版本管理
+
+当前日志分三类：
+
+```txt
+bff.access     浏览器 -> Nuxt BFF 的请求
+bff.upstream   Nuxt BFF -> Koa backend 的请求
+backend.access Koa backend 实际处理的请求
+```
+
+一次登录成功时，控制台会看到类似日志：
+
+```txt
+[INFO] bff.upstream POST /auth/login 200 20ms traceId=8066b346-7fe3-4ef8-bc8b-5e3bdc047f83
+[INFO] bff.access POST /api/auth/login 200 26ms traceId=8066b346-7fe3-4ef8-bc8b-5e3bdc047f83
+[INFO] backend.access POST /auth/login 200 11ms traceId=8066b346-7fe3-4ef8-bc8b-5e3bdc047f83
+```
+
+这里的 `traceId` 用来串起同一次请求链路。排查登录、刷新、商品接口、后端鉴权问题时，可以先用同一个 `traceId` 同时查 BFF 日志和 backend 日志。
+
+本地开发默认使用可读性更好的 pretty 日志：
+
+```bash
+pnpm backend
+pnpm dev
+```
+
+如果想同时写入本地文件：
+
+```bash
+pnpm backend:log
+pnpm dev:log
+```
+
+日志文件位置：
+
+```txt
+logs/backend-local.log
+logs/nuxt-local.log
+```
+
+生产环境默认使用 JSON 日志，方便容器平台、云日志、ELK、Loki、Datadog 等系统采集：
+
+```bash
+pnpm start:backend
+pnpm start:nuxt
+```
+
+设计原则：
+
+- 本地日志优先可读：`LOG_LEVEL=debug`、`LOG_FORMAT=pretty`
+- 生产日志优先采集：`LOG_LEVEL=info`、`LOG_FORMAT=json`
+- 默认不记录完整请求参数，避免密码、token、cookie、手机号等敏感信息进入日志
+- 只记录方法、路径、状态码、耗时、traceId、query key、错误码等排查必要信息
+- 错误日志走 `console.error`，普通日志走 `console.log`
+
+结果：登录、刷新、商品列表、个人信息等接口请求现在都能在控制台看到完整链路日志；需要持久化时，可以用 `*:log` 命令将 stdout 同步写入本地 `logs/` 文件。
+
+## 8. 补齐 BFF/Backend 错误处理体验层
+
+问题：BFF 层服务出错、Koa backend 服务出错时，前端虽然能收到标准错误，但用户体验还不完整。部分页面只显示固定文案，操作失败没有统一提示，详情页在后端不可用时可能被误判成“商品不存在”，生产环境也不应该把内部 `details` 暴露给浏览器。
+
+修改：
+
+- 新增 `app/utils/api-error.ts`，把 `ApiClientError` 转成用户可读的错误视图
+- 新增 `app/composables/useApiErrorHandler.ts`，统一处理操作型接口错误
+- 新增 `app/composables/useAppMessage.ts`，管理全局消息状态
+- 新增 `app/components/ui/AppMessages.vue`，展示全局错误提示和 `traceId`
+- `app/layouts/default.vue` 挂载全局消息组件
+- 首页和商品列表页使用 `createApiErrorView()` 展示局部错误块
+- 商品详情页根据真实错误类型抛出页面错误，不再把 backend 不可用误判成 404
+- 登录页使用统一错误翻译，不再只写固定失败文案
+- 退出登录失败时通过全局消息提示用户
+- `app/error.vue` 展示 `traceId`，方便用户反馈和日志排查
+- `server/utils/api-response.ts` 和 `backend/app.mjs` 在生产环境隐藏 `details`
+- `app/assets/css/main.css` 增加局部错误、全局消息和错误编号样式
+
+错误分类：
+
+```txt
+401 / UNAUTHORIZED      需要重新登录
+403 / FORBIDDEN         请求被安全策略拦截
+404 / NOT_FOUND         内容不存在或已下架
+422 / VALIDATION_ERROR  表单内容需要调整
+502 / UPSTREAM_ERROR    后端服务暂时不可用
+500 / INTERNAL_ERROR    页面暂时不可用
+```
+
+结果：BFF 或 Koa backend 出错时，前端不会直接暴露内部异常；用户能看到明确提示、重试入口和错误编号，研发可以用同一个 `traceId` 关联浏览器响应、BFF 日志和 backend 日志。

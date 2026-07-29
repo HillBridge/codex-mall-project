@@ -25,8 +25,11 @@ export function throwApiError(event: H3Event, input: ApiErrorInput): never {
   const payload: ApiFailure = {
     code: input.code,
     message: input.message,
-    traceId: getTraceId(event),
-    details: input.details
+    traceId: getTraceId(event)
+  }
+
+  if (shouldExposeDetails() && input.details !== undefined) {
+    payload.details = input.details
   }
 
   throw createError({
@@ -34,4 +37,8 @@ export function throwApiError(event: H3Event, input: ApiErrorInput): never {
     message: input.message,
     data: payload
   })
+}
+
+function shouldExposeDetails() {
+  return process.env.NODE_ENV !== 'production'
 }

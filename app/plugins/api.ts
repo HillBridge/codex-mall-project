@@ -3,8 +3,13 @@ import type { ApiClientFetcher } from '~/utils/api-client'
 
 export default defineNuxtPlugin(() => {
   const config = useRuntimeConfig()
+  const requestEvent = import.meta.server ? useRequestEvent() : undefined
+  const requestHeaders = import.meta.server ? useRequestHeaders(['cookie', 'x-request-id']) : undefined
   const forwardedHeaders = import.meta.server
-    ? useRequestHeaders(['cookie', 'x-request-id'])
+    ? {
+        ...requestHeaders,
+        'x-request-id': String(requestEvent?.context.requestId || requestHeaders?.['x-request-id'] || '')
+      }
     : undefined
   const fetcher = import.meta.server ? useRequestFetch() as ApiClientFetcher : undefined
 

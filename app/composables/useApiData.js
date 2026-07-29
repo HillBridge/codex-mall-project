@@ -1,5 +1,6 @@
 import { isRef, toValue } from 'vue'
 import { useApiClient } from './useApiClient'
+import { serializeApiError } from '~/utils/api-error'
 
 function readQuery(query) {
   if (!query) return undefined
@@ -18,9 +19,15 @@ export function useApiData(path, options = {}) {
 
   return useAsyncData(
     options?.key || `api:${toValue(path)}`,
-    async () => await apiFetch(toValue(path), {
-      query: readQuery(options?.query)
-    }),
+    async () => {
+      try {
+        return await apiFetch(toValue(path), {
+          query: readQuery(options?.query)
+        })
+      } catch (error) {
+        throw serializeApiError(error)
+      }
+    },
     asyncOptions
   )
 }

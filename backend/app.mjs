@@ -44,8 +44,11 @@ export function createBackendApp() {
       ctx.body = {
         code: error.code || 'INTERNAL_ERROR',
         message: error.message || '服务暂时不可用',
-        traceId: ctx.state.traceId,
-        details: error.details
+        traceId: ctx.state.traceId
+      }
+
+      if (shouldExposeDetails() && error.details !== undefined) {
+        ctx.body.details = error.details
       }
     } finally {
       const level = ctx.status >= 500 ? 'error' : ctx.status >= 400 ? 'warn' : 'info'
@@ -161,3 +164,7 @@ export function createBackendApp() {
 }
 
 export const app = createBackendApp()
+
+function shouldExposeDetails() {
+  return process.env.NODE_ENV !== 'production'
+}

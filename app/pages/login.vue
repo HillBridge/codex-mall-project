@@ -2,6 +2,7 @@
 import { LogIn } from 'lucide-vue-next'
 import { reactive, ref } from 'vue'
 import { z } from 'zod'
+import { useApiErrorHandler } from '~/composables/useApiErrorHandler'
 import { usePageSeo } from '~/composables/usePageSeo'
 import { useSessionStore } from '~/stores/session'
 
@@ -12,6 +13,7 @@ usePageSeo({
 
 const route = useRoute()
 const session = useSessionStore()
+const { handleApiError } = useApiErrorHandler()
 const form = reactive({
   email: 'demo@example.com',
   password: 'nuxt-demo'
@@ -34,8 +36,11 @@ async function submit() {
   try {
     await session.login(parsed.data)
     await navigateTo(typeof route.query.redirect === 'string' ? route.query.redirect : '/account/profile')
-  } catch {
-    message.value = '登录失败，请检查账号或密码。'
+  } catch (error) {
+    const view = await handleApiError(error, {
+      fallbackMessage: '登录失败，请检查账号或密码。'
+    })
+    message.value = view.message
   }
 }
 </script>

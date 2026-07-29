@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { ArrowLeft, RefreshCcw } from 'lucide-vue-next'
 import { computed } from 'vue'
+import { formatTraceId } from '~/utils/api-error'
 
 const props = defineProps<{
   error: {
     statusCode?: number
     statusMessage?: string
     message?: string
+    data?: {
+      traceId?: string
+    }
   }
 }>()
 
@@ -18,6 +22,7 @@ const title = computed(() => {
 
 const goHome = () => clearError({ redirect: '/' })
 const retry = () => clearError()
+const traceId = computed(() => props.error.data?.traceId)
 </script>
 
 <template>
@@ -25,6 +30,7 @@ const retry = () => clearError()
     <p class="eyebrow">{{ statusCode }}</p>
     <h1>{{ title }}</h1>
     <p>{{ error.statusMessage || error.message || '请稍后再试，或者回到首页继续浏览。' }}</p>
+    <small v-if="traceId">{{ formatTraceId(traceId) }}</small>
     <div class="error-actions">
       <button class="button primary" type="button" @click="goHome">
         <ArrowLeft :size="18" />

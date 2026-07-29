@@ -500,6 +500,24 @@ h2 {
   color: var(--muted);
 }
 
+.inline-error h2 {
+  margin-bottom: 8px;
+  font-size: 1.35rem;
+}
+
+.inline-error small,
+.error-page small,
+.app-message small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.inline-error .button {
+  margin-top: 18px;
+}
+
 .pending-block {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -698,9 +716,83 @@ h2 {
   padding: 40px 0;
 }
 
+.error-page small {
+  margin-top: 12px;
+}
+
 .error-actions {
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.app-messages {
+  position: fixed;
+  z-index: 80;
+  right: clamp(14px, 3vw, 32px);
+  bottom: clamp(14px, 3vw, 32px);
+  display: grid;
+  gap: 10px;
+  width: min(420px, calc(100vw - 28px));
+}
+
+.app-message {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: start;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.app-message-error {
+  border-left: 4px solid var(--red);
+}
+
+.app-message-warning {
+  border-left: 4px solid var(--yellow);
+}
+
+.app-message-success {
+  border-left: 4px solid var(--green);
+}
+
+.app-message-info {
+  border-left: 4px solid var(--blue);
+}
+
+.app-message strong {
+  display: block;
+  line-height: 1.25;
+}
+
+.app-message p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.app-message small {
+  margin-top: 6px;
+}
+
+.app-message button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.app-message button:hover {
+  background: #f2f4f7;
+  color: var(--ink);
 }
 
 .site-footer {

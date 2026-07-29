@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { LogOut, Menu, Search, User, X } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
+import { useApiErrorHandler } from '~/composables/useApiErrorHandler'
 import { useSessionStore } from '~/stores/session'
 import { hasLoggedInHintCookie } from '~/utils/auth-cookie'
 
@@ -11,6 +12,7 @@ const navItems = appConfig.navigation as Array<{ label: string, to: string }> | 
 const session = useSessionStore()
 const route = useRoute()
 const menuOpen = ref(false)
+const { handleApiError } = useApiErrorHandler()
 
 const productName = computed(() => productConfig?.name || runtimeConfig.public.appName)
 const navigation = computed(() => navItems || [
@@ -31,6 +33,16 @@ onMounted(() => {
     void session.fetchCurrentUser()
   }
 })
+
+async function logout() {
+  try {
+    await session.logout()
+  } catch (error) {
+    await handleApiError(error, {
+      fallbackMessage: '退出登录失败，请稍后重试。'
+    })
+  }
+}
 </script>
 
 <template>
@@ -59,7 +71,7 @@ onMounted(() => {
         type="button"
         aria-label="退出登录"
         title="退出登录"
-        @click="session.logout()"
+        @click="logout"
       >
         <LogOut :size="19" />
       </button>

@@ -1,4 +1,5 @@
 import { computed, ref } from 'vue'
+import { serializeApiError } from '~/utils/api-error'
 import type { Ref } from 'vue'
 
 type QueryDrivenListState<TItem> = {
@@ -45,7 +46,7 @@ export async function useQueryDrivenList<TFilter, TItem>(
       }
     } catch (fetchError) {
       if (currentRequestId === requestId) {
-        error.value = fetchError
+        error.value = serializeApiError(fetchError)
       }
     } finally {
       if (currentRequestId === requestId) {
