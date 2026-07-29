@@ -104,9 +104,9 @@ backend.access Koa backend 实际处理的请求
 一次登录成功时，控制台会看到类似日志：
 
 ```txt
-[INFO] bff.upstream POST /auth/login 200 20ms traceId=8066b346-7fe3-4ef8-bc8b-5e3bdc047f83
-[INFO] bff.access POST /api/auth/login 200 26ms traceId=8066b346-7fe3-4ef8-bc8b-5e3bdc047f83
-[INFO] backend.access POST /auth/login 200 11ms traceId=8066b346-7fe3-4ef8-bc8b-5e3bdc047f83
+[time: 2026-07-29 14:12:33] [level: INFO] [scope: bff.upstream] | method: POST | path: /auth/login | status: 200 | duration: 20ms | traceId: 8066b346-7fe3-4ef8-bc8b-5e3bdc047f83
+[time: 2026-07-29 14:12:33] [level: INFO] [scope: bff.access] | method: POST | path: /api/auth/login | status: 200 | duration: 26ms | traceId: 8066b346-7fe3-4ef8-bc8b-5e3bdc047f83
+[time: 2026-07-29 14:12:33] [level: INFO] [scope: backend.access] | method: POST | path: /auth/login | status: 200 | duration: 11ms | traceId: 8066b346-7fe3-4ef8-bc8b-5e3bdc047f83
 ```
 
 这里的 `traceId` 用来串起同一次请求链路。排查登录、刷新、商品接口、后端鉴权问题时，可以先用同一个 `traceId` 同时查 BFF 日志和 backend 日志。
@@ -143,6 +143,8 @@ pnpm start:nuxt
 
 - 本地日志优先可读：`LOG_LEVEL=debug`、`LOG_FORMAT=pretty`
 - 生产日志优先采集：`LOG_LEVEL=info`、`LOG_FORMAT=json`
+- 日志时间统一使用 `YYYY-MM-DD HH:mm:ss`
+- pretty 日志把 `time`、`level`、`scope` 放在 `[]` 前缀中，其他字段用 `| title: value` 分隔
 - 默认不记录完整请求参数，避免密码、token、cookie、手机号等敏感信息进入日志
 - 只记录方法、路径、状态码、耗时、traceId、query key、错误码等排查必要信息
 - 错误日志走 `console.error`，普通日志走 `console.log`
