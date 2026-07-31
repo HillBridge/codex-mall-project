@@ -728,10 +728,7 @@ export default {
     const origin = useOldVersion ? env.OLD_ORIGIN : env.NEW_ORIGIN
 
     const incomingUrl = new URL(request.url)
-    const targetUrl = new URL(
-      incomingUrl.pathname + incomingUrl.search,
-      origin,
-    )
+    const targetUrl = new URL(incomingUrl.pathname + incomingUrl.search, origin)
 
     const headers = new Headers(request.headers)
     headers.set('X-Forwarded-Host', incomingUrl.host)
@@ -742,8 +739,8 @@ export default {
         method: request.method,
         headers,
         body: request.body,
-        redirect: 'manual',
-      }),
+        redirect: 'manual'
+      })
     )
 
     const response = new Response(upstreamResponse.body, upstreamResponse)
@@ -752,17 +749,14 @@ export default {
       response.headers.append(
         'Set-Cookie',
         `${RELEASE_COOKIE}=${encodeURIComponent(env.NEW_RELEASE)}; ` +
-          'Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=28800',
+          'Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=28800'
       )
     }
 
-    response.headers.set(
-      'X-App-Release',
-      useOldVersion ? env.OLD_RELEASE : env.NEW_RELEASE,
-    )
+    response.headers.set('X-App-Release', useOldVersion ? env.OLD_RELEASE : env.NEW_RELEASE)
 
     return response
-  },
+  }
 }
 ```
 
