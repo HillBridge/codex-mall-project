@@ -11,11 +11,10 @@ import {
 import type { ApiErrorCode, ApiFailure } from '~~/shared/types/api'
 import { getTraceId, throwApiError } from './api-response'
 import { logger } from './logger'
-
-type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS'
+import { getUpstreamMaxAttempts, type UpstreamHttpMethod } from './upstream-retry-policy'
 
 type UpstreamOptions = {
-  method?: HttpMethod
+  method?: UpstreamHttpMethod
   body?: unknown
   query?: Record<string, unknown>
   headers?: HeadersInit
@@ -84,15 +83,15 @@ async function fetchUpstream(
   serviceAuth: ServiceAuthConfig
 ) {
   const timeout = options.timeout || 15000
+  const method = options.method || 'GET'
+  const maxAttempts = getUpstreamMaxAttempts(method)
   let lastError: unknown
 
-  // 网络等异常会重试2次
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), timeout)
 
     try {
-      const method = options.method || 'GET'
       const requestURL = createUpstreamURL(baseURL, path, options.query)
       const requestBody = createUpstreamBody(options.body)
       const startedAt = Date.now()
@@ -123,10 +122,11 @@ async function fetchUpstream(
       return response
     } catch (error) {
       lastError = error
-      if (attempt > 0) break
+      if (attempt + 1 >= maxAttempts) break
+
       logger.warn('bff.upstream', {
         traceId: getTraceId(event),
-        method: options.method || 'GET',
+        method,
         path,
         durationMs: timeout,
         attempt: attempt + 1,
@@ -164,7 +164,7 @@ function ensureTrailingSlash(value: string) {
 function createUpstreamHeaders(
   event: H3Event,
   input: HeadersInit | undefined,
-  method: HttpMethod,
+  method: UpstreamHttpMethod,
   upstreamURL: URL,
   body: string | undefined,
   serviceAuth: ServiceAuthConfig
@@ -197,7 +197,7 @@ function createUpstreamHeaders(
 
 function setServiceAuthHeaders(
   headers: Headers,
-  method: HttpMethod,
+  method: UpstreamHttpMethod,
   upstreamURL: URL,
   body: string | undefined,
   serviceAuth: ServiceAuthConfig
@@ -280,7 +280,7 @@ function createServiceSignature({
   secret: string
   serviceId: string
   timestamp: string
-  method: HttpMethod
+  method: UpstreamHttpMethod
   path: string
   body: string
 }) {
