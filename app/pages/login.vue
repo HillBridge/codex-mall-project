@@ -25,6 +25,11 @@ const schema = z.object({
   password: z.string().min(6, '密码至少 6 位')
 })
 
+function isSafeRedirectPath(path: string) {
+  // 必须是站内相对路径：排除协议相对 URL（//evil.com）和反斜杠伪装（/\evil.com）
+  return path.startsWith('/') && !path.startsWith('//') && !path.startsWith('/\\')
+}
+
 async function submit() {
   message.value = ''
   const parsed = schema.safeParse(form)
@@ -35,8 +40,9 @@ async function submit() {
 
   try {
     await session.login(parsed.data)
+    const redirect = route.query.redirect
     await navigateTo(
-      typeof route.query.redirect === 'string' ? route.query.redirect : '/account/profile'
+      typeof redirect === 'string' && isSafeRedirectPath(redirect) ? redirect : '/account/profile'
     )
   } catch (error) {
     const view = await handleApiError(error, {
