@@ -25,7 +25,7 @@ Browser
 
 ### `app/composables`
 
-放跨业务能力，例如 `useApiClient`、`useApiData`、`usePageSeo`。这层要稳定、少而精。
+放跨业务能力，例如 `useApiClient`、`useApiQuery`、`usePageSeo`。这层要稳定、少而精。
 
 ### `app/stores`
 
@@ -35,7 +35,7 @@ Pinia 只保存跨页面状态，例如会话、购物车、全局偏好。服�
 
 作为 BFF 层，隔离浏览器和真实后端。它负责聚合、裁剪、鉴权、错误标准化和安全头，不让页面直接理解多个后端服务。
 
-所有成功响应统一返回 `{ data, traceId }`，前端通过 `useApiClient` 自动拆包。页面 SSR 数据统一走 `useApiData`，用户操作请求统一走 `useApiClient`。
+所有成功响应统一返回 `{ data, traceId }`，前端通过 `useApiClient` 自动拆包。页面 SSR 数据统一走 `useApiQuery`，用户操作请求统一走 `useApiClient`。
 
 ### `shared`
 
@@ -45,11 +45,11 @@ Pinia 只保存跨页面状态，例如会话、购物车、全局偏好。服�
 
 ### SSR 数据一致性
 
-SPA 只在浏览器请求数据，Nuxt 会先在服务端跑一次，再在客户端接管。项目用 `useApiData` 处理普通 SSR 页面数据，用 `useQueryDrivenList` 处理 URL query 驱动的复杂列表页，用 `useApiClient` 处理命令式请求，避免同一接口在 SSR 与 CSR 行为不一致。
+SPA 只在浏览器请求数据，Nuxt 会先在服务端跑一次，再在客户端接管。项目用 `useApiQuery` 处理普通 SSR 页面数据，用 `useQueryDrivenList` 处理 URL query 驱动的复杂列表页，用 `useApiClient` 处理命令式请求，避免同一接口在 SSR 与 CSR 行为不一致。
 
 落地点：
 
-- `app/composables/useApiData.js`
+- `app/composables/useApiQuery.ts`
 - `app/composables/useQueryDrivenList.ts`
 - `app/composables/useApiClient.ts`
 - `app/pages/index.vue`

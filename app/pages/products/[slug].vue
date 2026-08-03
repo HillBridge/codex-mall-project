@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { ArrowLeft, ShoppingBag } from 'lucide-vue-next'
 import { computed } from 'vue'
-import { useApiData } from '~/composables/useApiData'
+import { useApiQuery } from '~/composables/useApiQuery'
 import { usePageSeo } from '~/composables/usePageSeo'
 import { createApiErrorView } from '~/utils/api-error'
 import type { ProductDetail } from '~~/shared/types/product'
 
 const route = useRoute()
 const slug = Array.isArray(route.params.slug) ? route.params.slug[0] : String(route.params.slug)
-const { data: product, error } = await useApiData(`/products/${slug}` as `/products/${string}`, {
+const { data: product, error } = await useApiQuery(`/products/${slug}` as `/products/${string}`, {
   key: `product:${slug}`
 })
 const currentProduct = computed(() => product.value as ProductDetail | null)

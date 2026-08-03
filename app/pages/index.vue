@@ -2,7 +2,7 @@
 import { ArrowRight, ShieldCheck, Sparkles, TimerReset } from 'lucide-vue-next'
 import { computed } from 'vue'
 import PendingBlock from '~/components/ui/PendingBlock.vue'
-import { useApiData } from '~/composables/useApiData'
+import { useApiQuery } from '~/composables/useApiQuery'
 import { usePageSeo } from '~/composables/usePageSeo'
 import ProductCard from '~/features/products/components/ProductCard.vue'
 import { createApiErrorView, formatTraceId } from '~/utils/api-error'
@@ -18,7 +18,7 @@ const {
   pending,
   error,
   refresh
-} = await useApiData('/products', {
+} = await useApiQuery('/products', {
   query: { featured: true },
   key: 'home-featured-products',
   default: () => []

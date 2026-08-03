@@ -101,14 +101,14 @@ const user = await apiFetch('/auth/me')
 - 服务端 `{ data, traceId }` 响应拆包
 - API 错误标准化
 
-### `useApiData`
+### `useApiQuery`
 
-位置：`app/composables/useApiData.js`
+位置：`app/composables/useApiQuery.ts`
 
 用于页面数据获取，内部基于 `useAsyncData`，适合 SSR 首屏、列表页、详情页。
 
 ```ts
-const { data, pending, error, refresh } = await useApiData('/products', {
+const { data, pending, error, refresh } = await useApiQuery('/products', {
   query: { featured: true },
   key: 'home-featured-products',
   default: () => []
@@ -524,7 +524,7 @@ backend access 日志
 
 ## 7. 团队使用约定
 
-- 页面 SSR 数据用 `useApiData`
+- 页面 SSR 数据用 `useApiQuery`
 - 用户操作请求用 `useApiClient`
 - 用户操作失败用 `useApiErrorHandler`
 - 页面展示错误用 `createApiErrorView`

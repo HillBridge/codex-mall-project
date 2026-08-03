@@ -62,7 +62,7 @@ const apiFetch = useApiClient()
 await apiFetch('/auth/me')
 ```
 
-`useApiData`
+`useApiQuery`
 
 用于普通 SSR 页面数据。它基于 `useAsyncData`，适合首页、详情页、简单列表页。
 
@@ -79,9 +79,9 @@ await apiFetch('/auth/me')
 
 业务模块只需要提供筛选条件和 fetcher。
 
-## 4. 为什么 `useApi.ts` 改成 `useApiData.js`
+## 4. 为什么页面查询封装命名为 `useApiQuery.ts`
 
-命名改成 `useApiData.js` 是为了表达它的真实职责：它不是所有 API 请求的入口，而是“页面数据获取”的入口。
+命名为 `useApiQuery.ts` 是为了表达它的真实职责：它不是所有 API 请求的入口，而是支持 SSR 和客户端刷新的“查询型页面数据入口”。
 
 最终边界是：
 
@@ -89,7 +89,7 @@ await apiFetch('/auth/me')
 useApiClient
   命令式请求
 
-useApiData
+useApiQuery
   普通 SSR 页面数据
 
 useQueryDrivenList
@@ -150,7 +150,7 @@ SSR 根据 URL query 请求到 家居 数据
 简单页面用：
 
 ```ts
-await useApiData('/products')
+await useApiQuery('/products')
 ```
 
 只有同时满足这些条件时，才需要 `useQueryDrivenList`：
@@ -360,7 +360,7 @@ loggedInHint.value = '1'
 - `app/utils/api-client.ts`
 - `app/utils/auth-cookie.ts`
 - `app/composables/useApiClient.ts`
-- `app/composables/useApiData.js`
+- `app/composables/useApiQuery.ts`
 - `app/composables/useQueryDrivenList.ts`
 - `app/stores/session.ts`
 - `backend/app.mjs`
@@ -381,7 +381,7 @@ loggedInHint.value = '1'
 Nuxt 中大型项目里要记住几条边界：
 
 - 页面不要直接理解真实后端，经过 BFF
-- 普通 SSR 页面用 `useApiData`
+- 普通 SSR 页面用 `useApiQuery`
 - URL query 驱动的复杂列表用 `useQueryDrivenList`
 - 用户操作请求用 `useApiClient`
 - 服务端可以全局复用无状态能力

@@ -58,7 +58,7 @@ docs/
 - SSR 首屏数据：`app/pages/index.vue` 和 `app/pages/products/index.vue`
 - BFF 接口：`server/api/products/*`、`server/api/auth/*`
 - Koa 真实后端：`backend/app.mjs`
-- API 请求封装：`app/composables/useApiClient.ts`、`app/composables/useApiData.js`
+- API 请求封装：`app/composables/useApiClient.ts`、`app/composables/useApiQuery.ts`
 - API 响应协议：`server/utils/api-response.ts`
 - 服务端上游 client：`server/utils/upstream.ts`
 - Cookie 鉴权：`backend/services/session-service.mjs`、`app/middleware/auth.ts`
