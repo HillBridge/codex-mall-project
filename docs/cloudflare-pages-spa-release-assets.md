@@ -212,7 +212,7 @@ Production branch
 
 ```ts
 export default defineConfig({
-  base: '/正确的子路径/',
+  base: '/正确的子路径/'
 })
 ```
 
@@ -220,7 +220,7 @@ export default defineConfig({
 
 ```ts
 export default defineConfig({
-  base: '/',
+  base: '/'
 })
 ```
 
@@ -435,4 +435,3 @@ MIME type 不匹配
 5. 前端捕获 chunk load error 并提示刷新
 6. 增加 version.json 检测线上版本变化
 ```
-
