@@ -50,7 +50,8 @@ export default defineNuxtConfig({
   },
   components: ['~/components'],
   experimental: {
-    typedPages: true
+    typedPages: true,
+    emitRouteChunkError: 'automatic'
   },
   typescript: {
     strict: true,
