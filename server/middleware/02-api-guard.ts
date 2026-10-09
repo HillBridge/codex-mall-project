@@ -6,6 +6,8 @@ import { throwApiError } from '../utils/api-response'
 const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 const csrfExemptPaths = new Set(['/api/auth/login'])
 
+// ====== 做csrf安全校验
+// ====== 双重cookie + 同源策略 + 请求头验证(path+method+requested:xxx特殊标识)
 export default defineEventHandler((event) => {
   const requestURL = getRequestURL(event)
   const path = requestURL.pathname

@@ -211,9 +211,11 @@ SSR 页面、中间件和 store 里通过 `$api` 请求 Nuxt `/api/*` 时，服�
 
 ```txt
 00-request-id.ts
-01-security-headers.ts
 02-api-guard.ts
+03-access-log.ts
 ```
+
+安全响应头由 `nuxt-security` 模块负责，配置在 `nuxt.config.ts` 的 `security` 字段。
 
 ### BFF 安全策略
 
@@ -289,7 +291,7 @@ SSR 页面、中间件和 store 里请求 Nuxt `/api/*` 时，服务端使用 `u
 
 8. 统一安全响应头
 
-`01-security-headers.ts` 统一设置：
+`nuxt-security`（`nuxt.config.ts` 的 `security`）统一设置：
 
 ```txt
 Content-Security-Policy
@@ -303,6 +305,12 @@ Strict-Transport-Security
 ```
 
 这些响应头用于降低 XSS、点击劫持、跨源资源误用和非 HTTPS 访问风险。
+
+CSP 使用 nonce + `'strict-dynamic'`：SSR 为每个请求生成 nonce 并注入到 `<script>/<style>/<link>`，生产环境 `script-src` 不再依赖 `'unsafe-inline'`。`style-src` 保留 `'unsafe-inline'`（Nuxt hydration 与 Vue style 绑定需要）。
+
+注意：`routeRules` 里配置了 `swr` 的路由（`/`、`/products/**`）会缓存整页 HTML 和响应头，缓存有效期内所有访客共用同一个 nonce。需要每次请求都换 nonce 时，要去掉这些路由的 `swr`。
+
+项目自带的 CSRF（`02-api-guard.ts`）继续生效，`nuxt-security` 的 `csrf`、`xssValidator`、`rateLimiter`、`requestSizeLimiter`、`corsHandler`、`removeLoggers` 均显式关闭。
 
 9. 接口响应标准化
 

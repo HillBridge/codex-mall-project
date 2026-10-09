@@ -132,12 +132,12 @@ Nuxt 文件路由会带来动态页、错误页和中间件链路。项目已经
 
 ### 安全与观测
 
-Nuxt 服务端也在请求链路里，必须补安全头和请求 ID。示例用 server middleware 做统一处理。
+Nuxt 服务端也在请求链路里，必须补安全头和请求 ID。安全头由 `nuxt-security` 模块统一设置，请求 ID 用 server middleware 处理。
 
 落地点：
 
-- `server/middleware/security-headers.ts`
-- `server/middleware/request-id.ts`
+- `nuxt.config.ts` 的 `security` 配置
+- `server/middleware/00-request-id.ts`
 
 ## 4. 推荐演进路线
 

@@ -72,10 +72,12 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
 }
 
 function getBaseApiFetch(baseURL: string, fetcher?: ApiClientFetcher) {
+  // ====== 当是服务端请求时, fetcher自动创建注入nuxt底层的$fetch
   if (fetcher) {
     return createBaseApiFetch(baseURL, fetcher)
   }
 
+  // ====== 只有客户端才需要缓存相同路径请求的API实例 避免重复创建
   const cachedClient = baseFetchCache.get(baseURL)
 
   if (cachedClient) {
