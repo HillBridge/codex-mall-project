@@ -17,7 +17,10 @@ type QueryDrivenListOptions<TFilter, TItem> = {
 export async function useQueryDrivenList<TFilter, TItem>(
   options: QueryDrivenListOptions<TFilter, TItem>
 ) {
+  // ===== init 仅在该 key 下值为 undefined 时执行,客户端水合时 payload 里已有值,就不会再执行
   const state = useState<QueryDrivenListState<TItem>>(options.key, () => ({
+    // ===== useState中key共享同一份状态
+    // ===== 这个key是同步服务端和客户端渲染的唯一标识, 不统一会造成水合时的数据不一致
     signature: '',
     items: []
   }))
@@ -37,7 +40,7 @@ export async function useQueryDrivenList<TFilter, TItem>(
 
     try {
       const items = await options.fetcher(nextFilter)
-
+      // ===== 处理新旧api竞态情况, 新请求快于旧请求时, 废弃掉旧请求返回的结果
       if (currentRequestId !== requestId) return
 
       state.value = {

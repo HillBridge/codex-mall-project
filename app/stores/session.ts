@@ -46,7 +46,8 @@ export const useSessionStore = defineStore('session', () => {
     await apiFetch('/auth/logout', { method: 'POST' })
     user.value = null
     ready.value = true
-    await navigateTo('/')
+    // ====== 退出后整页刷新: 一次性丢弃 Pinia / useState / useAsyncData 等全部客户端缓存, 避免上一个用户的数据残留
+    await navigateTo('/', { external: true, replace: true })
   }
 
   return {
