@@ -87,6 +87,7 @@ async function fetchUpstream(
   const maxAttempts = getUpstreamMaxAttempts(method)
   let lastError: unknown
 
+  // ===== get head options获取数据最多重试1次, 其他操作数据的不进行重试
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), timeout)
@@ -96,6 +97,7 @@ async function fetchUpstream(
       const requestBody = createUpstreamBody(options.body)
       const startedAt = Date.now()
 
+      // ===== 这里的fetch是node原生自带的
       const response = await fetch(requestURL, {
         method,
         headers: createUpstreamHeaders(
@@ -184,12 +186,12 @@ function createUpstreamHeaders(
   if (body !== undefined && !headers.has('content-type')) {
     headers.set('content-type', 'application/json')
   }
-
+  // ===== 过滤cookie上传到上游服务
   const cookie = createWhitelistedCookieHeader(event)
   if (cookie) {
     headers.set('cookie', cookie)
   }
-
+  // ===== 加服务间认证头
   setServiceAuthHeaders(headers, method, upstreamURL, body, serviceAuth)
 
   return headers

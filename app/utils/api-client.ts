@@ -113,6 +113,7 @@ function createRequestHeaders(
 ) {
   const headers = new Headers(requestHeaders)
 
+  // ===== bff层自己设置可信头字段
   headers.set('x-requested-with', 'NuxtPilotClient')
 
   Object.entries(forwardedHeaders || {}).forEach(([key, value]) => {
